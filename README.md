@@ -329,7 +329,7 @@ mode: single
 Nyní je systém připraven, ale zatím nemá vliv na elektrárnu a spotřebiče. Po prvním spuštění optimalizace (v odpoledních hodinách, aby systém znal 24h cen dopředu) a publikování lze predikční data lze prohlížet v EMHASSu.
 ![EMHASS power](2024-11-30_16-59-31_EMHASS–Home_Assistant.png)
 ![EMHASS battery](2024-11-30_16-59-50_EMHASS–Home_Assistant.png)
-![EMHASS cost](2024-11-30_17-00-33_EMHASS–Home_Assistant.png)
+![EMHASS cost](2024-11-30_17-00-11_EMHASS–Home_Assistant.png)
 ![EMHASS tabulka](2024-11-30_17-00-33_EMHASS–Home_Assistant.png)
 
 # Výkonná automatizace #
@@ -922,6 +922,7 @@ config:
   displayModeBar: false
   scrollZoom: false
 ```
+![x](2024-11-30_18-26-28_Radim–Home Assistant.png)
 ```
 type: custom:plotly-graph
 view_layout:
