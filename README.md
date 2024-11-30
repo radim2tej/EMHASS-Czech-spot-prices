@@ -537,6 +537,8 @@ mode: single
 ```
 
 # Příklady vizualizace #
+![panel 1](Screenshot 2024-11-30 at 16-57-29 Radim – Home Assistant.png)
+!(Screenshot 2024-11-30 at 16-57-19 Radim – Home Assistant.png)
 ```
 square: false
 type: grid
