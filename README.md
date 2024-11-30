@@ -217,7 +217,21 @@ sensor:
           {% endif %}
 
       p_deferrable012:
-        value_template: "{{ states('sensor.p_deferrable0') | float(default=0) + states('sensor.p_deferrable1') | float(default=0) + states('sensor.p_deferrable2') | float(default=0)}}" 
+        unit_of_measurement: 'W'
+        device_class: power
+        value_template: >-
+          {{ states('sensor.p_deferrable0') | float(default=0) + states('sensor.p_deferrable1') | float(default=0) + states('sensor.p_deferrable2') | float(default=0) }} 
+        attribute_templates:
+          schedule: >-
+            {% set sched0 = state_attr('sensor.p_deferrable0', 'deferrables_schedule') %}
+            {% set sched1 = state_attr('sensor.p_deferrable1', 'deferrables_schedule') %}
+            {% set sched2 = state_attr('sensor.p_deferrable2', 'deferrables_schedule') %}
+            {% set ns = namespace(final = []) %}
+            {% for i in range(0, sched0 | length) %}
+              {% set ns.final = ns.final + [{'date': sched0[i].date, 'p_deferrable012': sched0[i].p_deferrable0 | float + sched1[i].p_deferrable1 | float + sched2[i].p_deferrable2 | float}] %}
+            {% endfor %}
+            {{ ns.final }}
+
 
       home_load_no_var_loads:
         unit_of_measurement: 'W'
@@ -337,6 +351,8 @@ Nyní je systém připraven, ale zatím nemá vliv na elektrárnu a spotřebiče
 ![EMHASS tabulka](2024-11-30_17-00-33_EMHASS–Home_Assistant.png)
 
 Se systémem si lze docela hrát, doporučuji si z příkladů zkopírovat / upravit grafy denní predikce, historie predikce a reálnou historii ( vyzadují apexchar a plotly graph) a sledovat chování systému.
+
+Může být zajímavé v testovacím provozu porovnat hodotu nákladů klacické denní spotřeby a predikované **Total cost function value**.
 
 # Akční automatizace #
 Všechno pracuje a je načase i konat.
@@ -565,6 +581,7 @@ cards:
       - entity: sensor.soc_batt_forecast
       - entity: sensor.unit_load_cost
       - entity: sensor.unit_prod_price
+      - entity: sensor.optim_status
     show_header_toggle: false
     state_color: true
   - type: custom:apexcharts-card
@@ -588,6 +605,7 @@ cards:
           tick_amount: 4
     series:
       - entity: sensor.p_pv_forecast
+        name: výkon FVE
         yaxis_id: power
         curve: stepline
         stroke_width: 3
@@ -600,6 +618,7 @@ cards:
             return [new Date(entry.date), entry.p_pv_forecast];
           });
       - entity: sensor.p_load_forecast
+        name: příkon domu
         yaxis_id: power
         curve: stepline
         type: line
@@ -613,6 +632,7 @@ cards:
             return [new Date(entry.date), entry.p_load_forecast];
           });
       - entity: sensor.p_batt_forecast
+        name: výkon baterie
         yaxis_id: power
         curve: stepline
         color: pink
@@ -626,6 +646,7 @@ cards:
             return [new Date(entry.date), entry.p_batt_forecast];
           });
       - entity: sensor.p_grid_forecast
+        name: příkon ze sítě
         yaxis_id: power
         curve: stepline
         color: rgb(255, 155, 48)
@@ -638,62 +659,36 @@ cards:
           return entity.attributes.forecasts.map((entry) => {
             return [new Date(entry.date), entry.p_grid_forecast];
           });
-      - entity: sensor.p_deferrable0
+      - entity: sensor.p_deferrable012
         yaxis_id: power
         curve: stepline
-        name: Boiler0
+        name: Boiler
         color: rgb(180, 0, 180)
         show:
           in_header: false
           legend_value: false
         stroke_width: 2
         data_generator: |
-          return entity.attributes.deferrables_schedule.map((entry) => {
-            return [new Date(entry.date), entry.p_deferrable0];
-          });
-      - entity: sensor.p_deferrable1
-        yaxis_id: power
-        curve: stepline
-        name: Boiler1
-        color: rgb(180, 0, 180)
-        show:
-          in_header: false
-          legend_value: false
-        stroke_width: 2
-        data_generator: |
-          return entity.attributes.deferrables_schedule.map((entry) => {
-            return [new Date(entry.date), entry.p_deferrable1];
-          });
-      - entity: sensor.p_deferrable2
-        yaxis_id: power
-        curve: stepline
-        name: Boiler2
-        color: rgb(180, 0, 180)
-        show:
-          in_header: false
-          legend_value: false
-        stroke_width: 2
-        data_generator: |
-          return entity.attributes.deferrables_schedule.map((entry) => {
-            return [new Date(entry.date), entry.p_deferrable2];
+          return entity.attributes.schedule.map((entry) => {
+            return [new Date(entry.date), entry.p_deferrable012];
           });
       - entity: sensor.total_cost_fun_value
         unit: Kč
-        name: Plan Value (+ve credit)
+        name: Zisk/-Náklady dle denní predikce
         show:
           legend_value: false
           in_chart: false
       - entity: sensor.p_pv_forecast
         yaxis_id: power
         unit: kWh
-        name: Solar Production Forecast
+        name: Výroba FVE dle denní predikce
         show:
           legend_value: false
           in_chart: false
       - entity: sensor.unit_load_cost
+        name: nákup Kč/kWh * 1000
         yaxis_id: cost
         unit: Kč
-        name: load cost * 1000
         curve: stepline
         type: line
         color: green
@@ -708,7 +703,7 @@ cards:
       - entity: sensor.soc_batt_forecast
         yaxis_id: soc
         unit: "%"
-        name: batt soc forecast * 100
+        name: SOC baterie * 100
         curve: stepline
         type: line
         color: red
@@ -723,6 +718,7 @@ cards:
     view_layout:
       position: main
 title: EMHASS Predikce
+
 ```
 ![historie predikcel 1](2024-11-30_16-56-39_Radim–Home_Assistant.png)
 ```
