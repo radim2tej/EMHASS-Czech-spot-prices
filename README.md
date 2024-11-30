@@ -923,7 +923,7 @@ config:
   displayModeBar: false
   scrollZoom: false
 ```
-![x](2024-11-30_18-26-28_Radim–Home Assistant.png)
+![x](2024-11-30_18-26-28_Radim–Home_Assistant.png)
 ```
 type: custom:plotly-graph
 view_layout:
