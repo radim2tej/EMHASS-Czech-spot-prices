@@ -538,7 +538,8 @@ mode: single
 
 # Příklady vizualizace #
 ![panel 1](Screenshot 2024-11-30 at 16-57-29 Radim – Home Assistant.png)
-!(Screenshot 2024-11-30 at 16-57-19 Radim – Home Assistant.png)
+![panel 1](Screenshot 2024-11-30 at 16-56-55 Radim – Home Assistant.png)
+![panel 1](https://github.com/radim2tej/EMHASS-Czech-spot-prices/blob/bba23b7c08949c3a9bba33924abe569fb6c8d828/Screenshot%202024-11-30%20at%2016-56-12%20Radim%20%E2%80%93%20Home%20Assistant.png))
 ```
 square: false
 type: grid
