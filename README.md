@@ -2,22 +2,22 @@
 Zprovoznění EMHASS managmentu energie pro použití s českými spotovými cenami v Home assistantovi jako Add-onu. Jelikož je návod určen pro české prostředí, je použita čeština.
 
 # Co je EMHASS? #
-EMHASS - Energy managment system je predikční systém, který na základě vstupů (spotřeba domácnosti, výroba fotovoltaiky, nabití baterie, ceny spotu, ...) dokáže řídit efektivní nabíjení / vybíjení baterie, ovládání spotřebičů s odložitelým spuštěním a podobně. Samotná optimalizace se spouští odpoledne v 13:35, jakmile jsou známy nové spotové ceny na další den. Boiler je použit jako odložitelná zátěž a jelikož ho nahřívám v noci, dopoledne a odpoledne, tak model ho zpracovává jako 3 samostatné zátěže s různými časovými okny a automatizace si to pospojuje (deferrable012). Systém umí nastavit své chování, jestli jde o cenu, efektivní spotřebu energie nebo prodej podle vašeho přání.
+EMHASS - Energy managment system je predikční systém, který na základě vstupů (spotřeba domácnosti, výroba fotovoltaiky, nabití baterie, ceny spotu, ...) dokáže řídit efektivní nabíjení / vybíjení baterie, ovládání spotřebičů s odložitelým spuštěním a podobně. Samotná optimalizace se spouští odpoledne v 13:35, jakmile jsou známy nové spotové ceny na další den. Boiler je použit jako odložitelná zátěž a jelikož ho nahřívám v noci, dopoledne a odpoledne, tak model ho zpracovává jako 3 samostatné zátěže s různými časovými okny a automatizace si to pospojuje do **deferrable012**. Systém umí nastavit své chování, jestli jde o cenu, efektivní spotřebu energie nebo prodej podle vašeho přání.
 ![denní predikce](2024-11-30_17-14-11_Radim–Home_Assistant.png)
 Zprovoznění není úplná banalita, ale za výsledek to stojí. 
 
 # Instalace #
-1. V doplňcích nainstalovat EMHASS (https://github.com/davidusb-geek/emhass-add-on) - je potřeba přidat repozitář a zvolit EMHASS jako add-on.
-2. V HACS přidat Nanogreen pro zjišťování spotových cen
-3. V HACS přidat Solcast PV Forecast pro předpověď výrovy solárního sysému. Je třeba se zaregistrovat na stránky a dodat svoji elektrárnu (sklon, orientace, výkon, poloha). Do Home assistanta budeme pak potřebovat API-Key a Roof ID. Je dobré si pak předpovědi přidat do energy boardu, jsou hodně přesné.
-4. V HACS přidat GoodWe Inverter (experimental) pro ovládání elektrárny. V případě jiného měniče je třeba upravit)
-5. V zařízeních přidejte integraci FILE a přidejte službu zápisu oznámení do prvního souboru /share/data_load_cost_forecast.csv bez časového razítka a nastavte id_entity notify.file_load_cost_csv. Druhý soubor /share/data_prod_price_forecast.csv bez časového razítka a id_entity notify.file_sell_cost_csv. Tímto budeme EMHASSu předávat spotové ceny nákupu a prodeje.
-6. Připojte se na filesystém Home assistanta a ve složce /share vytvořte soubor zero.csv , který obsahuje jednu mezeru.
-7. Volitelně pro vizualizaci v HACS apexchart-card, Plotly graph card, Sankey Chart Card a Sunsynk-Power-Flow-Card
+1. V doplňcích nainstalovat **EMHASS** (https://github.com/davidusb-geek/emhass-add-on) - je potřeba přidat repozitář a zvolit EMHASS jako add-on.
+2. V HACS přidat **Nanogreen** pro zjišťování spotových cen
+3. V HACS přidat **Solcast PV Forecast** pro předpověď výrovy solárního sysému. Je třeba se zaregistrovat na stránky a dodat svoji elektrárnu (sklon, orientace, výkon, poloha). Do Home assistanta budeme pak potřebovat API-Key a Roof ID. Je dobré si pak předpovědi přidat do energy boardu, jsou hodně přesné.
+4. V HACS přidat **GoodWe Inverter (experimental)** pro ovládání elektrárny. V případě jiného měniče je třeba upravit)
+5. V zařízeních přidejte integraci **FILE** a přidejte službu zápisu oznámení do prvního souboru **/share/data_load_cost_forecast.csv** bez časového razítka a nastavte id_entity **notify.file_load_cost_csv**. Druhý soubor **/share/data_prod_price_forecast.csv** bez časového razítka a id_entity **notify.file_sell_cost_csv**. Tímto budeme EMHASSu předávat spotové ceny nákupu a prodeje.
+6. Připojte se na filesystém Home assistanta a ve složce **/share** vytvořte soubor **zero.csv**, který obsahuje jednu mezeru.
+7. Volitelně pro vizualizaci v HACS **apexchart-card**, **Plotly graph card**, **Sankey Chart Card** a **Sunsynk-Power-Flow-Card**.
 ![spotové ceny](2024-11-30_16-57-29_Radim–Home_Assistant.png)
 
 # Konfikurace #
-V Doplňcích / EMHASS / Nastavení nastavte dir /share, souřadnice long., lat. a alt,  solcast api, roof id a špičkový power elektrárny k kWp (s desetinnou čárkou)
+V **Doplňcích / EMHASS / Nastavení** nastavte dir /share, souřadnice long., lat. a alt, Solcast api-key + roof id a špičkový power elektrárny k kWp (s desetinnou čárkou)
 
 Samotná konfigurace EMHASSu může vypadat následně (po přepnutí do textové formy):
 ```
@@ -145,7 +145,7 @@ Samotná konfigurace EMHASSu může vypadat následně (po přepnutí do textov�
 }
 ```
 
-Do config.yaml přidat nastavení a senzory.
+Do **config.yaml** přidat nastavení a senzory.
 ```
 homeassistant:
   customize: !include customize.yaml
@@ -225,13 +225,11 @@ sensor:
         value_template: "{{ states('sensor.load') | int + (states('sensor.back_up_load') | int) - (states('sensor.zasuvka_boiler_napajeni') | int) }}"
 
 ```
-Poslední senzor je spotřeba domu bez odložitelných zátěží - zde boileru.
-
 Součástí senzorů je i výpočet koncové ceny (final buy_kwh a energie final_sell_kwh) pro nákup a prodej. Je potřeba si ji upravit podle vašeho dodavatele / odběratele.
-
+Poslední senzor je spotřeba domu bez odložitelných zátěží - zde boileru.
 Dejte restartovat HA pro načtení config.yaml
 
-# Provozní automatizace #
+# Základní automatizace #
 Nejprve automatizace pro předpověď výroby FVE pomocí Solcast (není nutné, ale budete mít v systému přesná aktuální předpovědní data):
 ```
 alias: Solcast update
@@ -257,7 +255,7 @@ actions:
     action: solcast_solar.update_forecasts
 mode: single
 ```
-Generování csv souborů s hodinovými cenami a spuštění optimalizace
+Generování **CSV** souborů s hodinovými cenami a spuštění optimalizace
 ```
 alias: EMHASS optimalizace
 description: ""
@@ -314,7 +312,7 @@ actions:
   - action: shell_command.dayahead_optim
     data: {}
 ```
-Publikování aktuálních predikčních dat
+Pravidelné publikování predikčních dat
 ```
 alias: EMHASS publish
 description: ""
@@ -329,8 +327,8 @@ action:
 mode: single
 ```
 
-# testování beta provozu #
-Nyní je systém připraven, ale zatím nemá vliv na elektrárnu a spotřebiče. Po prvním spuštění optimalizace (v odpoledních hodinách, aby systém znal ceny energie 24h dopředu) a publikování lze predikční data lze prohlížet v EMHASSu. Lze v něm také ručně spouštět optimalizace, jen brzy dojdou pokusy na předpověď počasí (max 10 denně). Můžete dočasně v konfiguraci EMHASSu změnit předpovědi Weather forecast method na scrapper.
+# Testování beta provozu #
+Nyní je systém připraven, ale zatím nemá vliv na elektrárnu a spotřebiče. Po prvním spuštění optimalizace (v odpoledních hodinách, aby systém znal ceny energie 24h dopředu) a publikování lze predikční data prohlížet v EMHASSu. Lze v něm také ručně spouštět optimalizace, jen brzy dojdou pokusy na předpověď počasí (max 10 denně). Můžete dočasně v konfiguraci EMHASSu změnit předpovědi Weather forecast method na scrapper.
 ![EMHASS power](2024-11-30_16-59-31_EMHASS–Home_Assistant.png)
 ![EMHASS battery](2024-11-30_16-59-50_EMHASS–Home_Assistant.png)
 ![EMHASS cost](2024-11-30_17-00-11_EMHASS–Home_Assistant.png)
@@ -338,10 +336,10 @@ Nyní je systém připraven, ale zatím nemá vliv na elektrárnu a spotřebiče
 
 Se systémem si lze docela hrát, doporučuji si z příkladů zkopírovat / upravit grafy denní predikce, historie predikce a reálnou historii ( vyzadují apexchar a plotly graph) a sledovat chování systému.
 
-# Výkonná automatizace #
+# Akční automatizace #
 Všechno pracuje a je načase i konat.
 
-Automatizace na řízení baterie:
+Automatizace na řízení baterie u GoodWe:
 ```
 alias: EMHASS battery control
 description: >-
@@ -438,7 +436,7 @@ actions:
 mode: single
 ```
 
-Automatizace pro ovládání boileru:
+Automatizace pro ovládání boileru zásuvkou/shelly relátkem (zatím bez prodeje):
 ```
 alias: EMHASS boiler
 description: ohřev boileru podle EMHASS 3x denně
@@ -1203,143 +1201,143 @@ columns: 1
 ```
 ![gw](2024-11-30_18-49-26_Radim–Home_Assistant.png)
 ```
-  - type: custom:sunsynk-power-flow-card
-    cardstyle: full
-    large_font: true
-    show_solar: true
-    panel_mode: true
-    inverter:
-      model: goodwe_gridmode
-      modern: false
-      colour: grey
-      autarky: energy
-      three_phase: true
-      auto_scale: true
-    battery:
-      energy: 14200
-      shutdown_soc: 20
-      show_daily: false
-      max_power: 6400
-      full_capacity: 100
-      auto_scale: true
-      colour: pink
-      animation_speed: 6
-      dynamic_colour: true
-      linear_gradient: false
-      hide_soc: false
-      show_remaining_energy: true
-      show_absolute: true
-      invert_power: false
-    solar:
-      colour: rgb(255, 155, 48)
-      animation_speed: 9
-      show_daily: true
-      mppts: 2
-      max_power: 6400
-      pv1_name: západ
-      pv2_name: jih
-      display_mode: 2
-      auto_scale: true
-      dynamic_colour: true
-      pv2_max_power: 6400
-      pv1_max_power: 3200
-      pv3_max_power: 0
-      pv4_max_power: 0
-      efficiency: 3
-    load:
-      show_daily: true
-      show_aux: true
-      additional_loads: 2
-      animation_speed: 8
-      load1_icon: mdi:water-pump
-      load1_name: čerpadlo
-      load2_icon: mdi:solar-power-variant-outline
-      load2_name: w.solár
-      aux_loads: 2
-      aux_load1_icon: mdi:air-conditioner
-      aux_load1_name: TČ
-      aux_load2_icon: mdi:water-boiler
-      aux_load2_name: boiler
-      colour: "#2E8282"
-      max_power: 6400
-      dynamic_colour: true
-      auto_scale: true
-      show_daily_aux: false
-      aux_name: load
-      aux_type: mdi:home
-      dynamic_icon: true
-      essential_name: backup
-      load3_icon: ""
-      aux_dynamic_colour: true
-    grid:
-      no_grid_colour: "#BE87E2"
-      show_daily_buy: true
-      show_daily_sell: true
-      show_nonessential: false
-      animation_speed: 8
-      invert_grid: true
-      max_power: 6400
-      grid_name: ČEZ
-      auto_scale: true
-      show_absolute: false
-    entities:
-      inverter_power_175: sensor.total_power
-      inverter_voltage_154: sensor.l1_volts
-      inverter_voltage_L2: sensor.l2_volts
-      inverter_voltage_L3: sensor.l3_volts
-      load_power_L1: sensor.back_up_l1_power
-      load_power_L2: sensor.back_up_l2_power
-      load_power_L3: sensor.back_up_l3_power
-      load_frequency_192: sensor.meter_frequency
-      inverter_current_164: sensor.l1_current
-      inverter_current_L2: sensor.l2_current
-      inverter_current_L3: sensor.l3_current
-      day_battery_charge_70: sensor.today_battery_charge
-      day_battery_discharge_71: sensor.today_battery_discharge
-      battery_voltage_183: sensor.battery_voltage
-      battery_soc_184: sensor.battery_state_of_charge
-      battery_power_190: sensor.battery_power
-      battery_current_191: sensor.battery_current
-      battery_temp_182: sensor.battery_temperature
-      day_grid_import_76: sensor.import_daily
-      day_grid_export_77: sensor.export_daily
-      grid_power_169: none
-      grid_ct_power_172: sensor.active_power_l1
-      grid_ct_power_L2: sensor.active_power_l2
-      grid_ct_power_L3: sensor.active_power_l3
-      day_load_energy_84: sensor.today_load
-      day_pv_energy_108: sensor.today_s_pv_generation
-      pv1_power_186: sensor.pv1_power
-      pv1_voltage_109: sensor.pv1_voltage
-      pv1_current_110: sensor.pv1_current
-      pv2_power_187: sensor.pv2_power
-      pv2_voltage_111: sensor.pv2_voltage
-      pv2_current_112: sensor.pv2_current
-      essential_power: sensor.back_up_load
-      essential_load1: sensor.zasuvka_cerpadlo_napajeni
-      essential_load2: sensor.zasuvka_solar_napajeni
-      aux_power_166: sensor.load
-      aux_load1: sensor.tc_power
-      aux_load2: sensor.zasuvka_boiler_napajeni
-      radiator_temp_91: sensor.inverter_temperature_radiator
-      remaining_solar: sensor.solcast_pv_forecast_forecast_remaining_today
-      grid_connected_status_194: sensor.grid_mode_code
-      inverter_status_59: sensor.work_mode_code
-      dc_transformer_temp_90: sensor.inverter_temperature_air
-      battery_status: sensor.battery_mode_code
-      aux_load2_extra: sensor.teplota_boileru
-      environment_temp: sensor.atrea_venkovni_teplota
-      pv_total: sensor.pv_power
-      total_pv_generation: sensor.total_pv_generation
-      aux_load1_extra: sensor.teplota_termostatu
-      essential_load2_extra: sensor.teplota_akumulacni_nadoby
-      energy_cost_buy: sensor.final_buy_kwh
-      energy_cost_sell: sensor.final_sell_kwh
-    show_grid: true
-    show_battery: true
-    dynamic_line_width: true
-    max_line_width: 7
-    min_line_width: 1
-    view_layout:
-      grid-area: flow
+type: custom:sunsynk-power-flow-card
+cardstyle: full
+large_font: true
+show_solar: true
+panel_mode: true
+inverter:
+  model: goodwe_gridmode
+  modern: false
+  colour: grey
+  autarky: energy
+  three_phase: true
+  auto_scale: true
+battery:
+  energy: 14200
+  shutdown_soc: 20
+  show_daily: false
+  max_power: 6400
+  full_capacity: 100
+  auto_scale: true
+  colour: pink
+  animation_speed: 6
+  dynamic_colour: true
+  linear_gradient: false
+  hide_soc: false
+  show_remaining_energy: true
+  show_absolute: true
+  invert_power: false
+solar:
+  colour: rgb(255, 155, 48)
+  animation_speed: 9
+  show_daily: true
+  mppts: 2
+  max_power: 6400
+  pv1_name: západ
+  pv2_name: jih
+  display_mode: 2
+  auto_scale: true
+  dynamic_colour: true
+  pv2_max_power: 6400
+  pv1_max_power: 3200
+  pv3_max_power: 0
+  pv4_max_power: 0
+  efficiency: 3
+load:
+  show_daily: true
+  show_aux: true
+  additional_loads: 2
+  animation_speed: 8
+  load1_icon: mdi:water-pump
+  load1_name: čerpadlo
+  load2_icon: mdi:solar-power-variant-outline
+  load2_name: w.solár
+  aux_loads: 2
+  aux_load1_icon: mdi:air-conditioner
+  aux_load1_name: TČ
+  aux_load2_icon: mdi:water-boiler
+  aux_load2_name: boiler
+  colour: "#2E8282"
+  max_power: 6400
+  dynamic_colour: true
+  auto_scale: true
+  show_daily_aux: false
+  aux_name: load
+  aux_type: mdi:home
+  dynamic_icon: true
+  essential_name: backup
+  load3_icon: ""
+  aux_dynamic_colour: true
+grid:
+  no_grid_colour: "#BE87E2"
+  show_daily_buy: true
+  show_daily_sell: true
+  show_nonessential: false
+  animation_speed: 8
+  invert_grid: true
+  max_power: 6400
+  grid_name: ČEZ
+  auto_scale: true
+  show_absolute: false
+entities:
+  inverter_power_175: sensor.total_power
+  inverter_voltage_154: sensor.l1_volts
+  inverter_voltage_L2: sensor.l2_volts
+  inverter_voltage_L3: sensor.l3_volts
+  load_power_L1: sensor.back_up_l1_power
+  load_power_L2: sensor.back_up_l2_power
+  load_power_L3: sensor.back_up_l3_power
+  load_frequency_192: sensor.meter_frequency
+  inverter_current_164: sensor.l1_current
+  inverter_current_L2: sensor.l2_current
+  inverter_current_L3: sensor.l3_current
+  day_battery_charge_70: sensor.today_battery_charge
+  day_battery_discharge_71: sensor.today_battery_discharge
+  battery_voltage_183: sensor.battery_voltage
+  battery_soc_184: sensor.battery_state_of_charge
+  battery_power_190: sensor.battery_power
+  battery_current_191: sensor.battery_current
+  battery_temp_182: sensor.battery_temperature
+  day_grid_import_76: sensor.import_daily
+  day_grid_export_77: sensor.export_daily
+  grid_power_169: none
+  grid_ct_power_172: sensor.active_power_l1
+  grid_ct_power_L2: sensor.active_power_l2
+  grid_ct_power_L3: sensor.active_power_l3
+  day_load_energy_84: sensor.today_load
+  day_pv_energy_108: sensor.today_s_pv_generation
+  pv1_power_186: sensor.pv1_power
+  pv1_voltage_109: sensor.pv1_voltage
+  pv1_current_110: sensor.pv1_current
+  pv2_power_187: sensor.pv2_power
+  pv2_voltage_111: sensor.pv2_voltage
+  pv2_current_112: sensor.pv2_current
+  essential_power: sensor.back_up_load
+  essential_load1: sensor.zasuvka_cerpadlo_napajeni
+  essential_load2: sensor.zasuvka_solar_napajeni
+  aux_power_166: sensor.load
+  aux_load1: sensor.tc_power
+  aux_load2: sensor.zasuvka_boiler_napajeni
+  radiator_temp_91: sensor.inverter_temperature_radiator
+  remaining_solar: sensor.solcast_pv_forecast_forecast_remaining_today
+  grid_connected_status_194: sensor.grid_mode_code
+  inverter_status_59: sensor.work_mode_code
+  dc_transformer_temp_90: sensor.inverter_temperature_air
+  battery_status: sensor.battery_mode_code
+  aux_load2_extra: sensor.teplota_boileru
+  environment_temp: sensor.atrea_venkovni_teplota
+  pv_total: sensor.pv_power
+  total_pv_generation: sensor.total_pv_generation
+  aux_load1_extra: sensor.teplota_termostatu
+  essential_load2_extra: sensor.teplota_akumulacni_nadoby
+  energy_cost_buy: sensor.final_buy_kwh
+  energy_cost_sell: sensor.final_sell_kwh
+show_grid: true
+show_battery: true
+dynamic_line_width: true
+max_line_width: 7
+min_line_width: 1
+view_layout:
+  grid-area: flow
 ```
