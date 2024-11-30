@@ -226,7 +226,9 @@ sensor:
 
 ```
 Součástí senzorů je i výpočet koncové ceny (final buy_kwh a energie final_sell_kwh) pro nákup a prodej. Je potřeba si ji upravit podle vašeho dodavatele / odběratele.
+
 Poslední senzor je spotřeba domu bez odložitelných zátěží - zde boileru.
+
 Dejte restartovat HA pro načtení config.yaml
 
 # Základní automatizace #
