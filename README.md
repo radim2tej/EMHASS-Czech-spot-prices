@@ -1,10 +1,10 @@
 # EMHASS in Czech republic #
 Zprovoznění EMHASS managmentu energie pro použití s českými spotovými cenami v Home assistantovi jako Add-onu. Jelikož je návod určen pro české prostředí, je použita čeština.
-![denní predikce](2024-11-30_17-14-11_Radim–Home_Assistant.png)
 
 # Co je EMHASS? #
-EMHASS - Energy managment system je predikční systém, který na základě vstupů (spotřeba domácnosti, výroba fotovoltaiky, nabití baterie, ceny spotu, ...) dokáže řídit efektivní nabíjení / vybíjení baterie, ovládání spotřebičů s odložitelým spuštěním a podobně. Zprovoznění není úplná banalita, ale za výsledek to stojí. Samotná optimalizace se spouští odpoledne v 13:35, jakmile jsou známy nové spotové ceny na další den. Boiler je použit jako odložitelná zátěž a jelikož ho nahřívám v noci, dopoledne a odpoledne, tak model ho zpracovává jako 3 samostatné zátěže s různými časovými okny a automatizace si to pospojuje (deferrable012). Systém umí nastavit své chování, jestli jde o cenu, efektivní spotřebu energie nebo prodej.
-![spotové ceny](2024-11-30_16-57-29_Radim–Home_Assistant.png)
+EMHASS - Energy managment system je predikční systém, který na základě vstupů (spotřeba domácnosti, výroba fotovoltaiky, nabití baterie, ceny spotu, ...) dokáže řídit efektivní nabíjení / vybíjení baterie, ovládání spotřebičů s odložitelým spuštěním a podobně. Samotná optimalizace se spouští odpoledne v 13:35, jakmile jsou známy nové spotové ceny na další den. Boiler je použit jako odložitelná zátěž a jelikož ho nahřívám v noci, dopoledne a odpoledne, tak model ho zpracovává jako 3 samostatné zátěže s různými časovými okny a automatizace si to pospojuje (deferrable012). Systém umí nastavit své chování, jestli jde o cenu, efektivní spotřebu energie nebo prodej podle vašeho přání.
+![denní predikce](2024-11-30_17-14-11_Radim–Home_Assistant.png)
+Zprovoznění není úplná banalita, ale za výsledek to stojí. 
 
 # Instalace #
 1. V doplňcích nainstalovat EMHASS (https://github.com/davidusb-geek/emhass-add-on) - je potřeba přidat repozitář a zvolit EMHASS jako add-on.
@@ -13,6 +13,8 @@ EMHASS - Energy managment system je predikční systém, který na základě vst
 4. V HACS přidat GoodWe experimental pro ovládání elektrárny. V případě jiného měniče je třeba upravit)
 5. V zařízeních přidejte integraci FILE a přidejte službu zápisu oznámení do prvního souboru /share/data_load_cost_forecast.csv bez časového razítka a nastavte id_entity notify.file_load_cost_csv. Druhý soubor /share/data_prod_price_forecast.csv bez časového razítka a id_entity notify.file_sell_cost_csv. Tímto budeme EMHASSu předávat spotové ceny nákupu a prodeje.
 6. Připojte se na filesystém Home assistanta a ve složce /share vytvořte soubor zero.csv , který obsahuje jednu mezeru.
+![spotové ceny](2024-11-30_16-57-29_Radim–Home_Assistant.png)
+
 # Konfikurace #
 V Doplňcích / EMHASS / Nastavení nastavte dir /share, souřadnice long., lat. a alt,  solcast api, roof id a špičkový power elektrárny k kWp (s desetinnou čárkou)
 
@@ -327,11 +329,13 @@ mode: single
 ```
 
 # testování beta provozu #
-Nyní je systém připraven, ale zatím nemá vliv na elektrárnu a spotřebiče. Po prvním spuštění optimalizace (v odpoledních hodinách, aby systém znal 24h cen dopředu) a publikování lze predikční data lze prohlížet v EMHASSu.
+Nyní je systém připraven, ale zatím nemá vliv na elektrárnu a spotřebiče. Po prvním spuštění optimalizace (v odpoledních hodinách, aby systém znal ceny energie 24h dopředu) a publikování lze predikční data lze prohlížet v EMHASSu. Lze v něm také ručně spouštět optimalizace, jen brzy dojdou pokusy na předpověď počasí (max 10 denně). Můžete dočasně v konfiguraci EMHASSu změnit předpovědi Weather forecast method na scrapper.
 ![EMHASS power](2024-11-30_16-59-31_EMHASS–Home_Assistant.png)
 ![EMHASS battery](2024-11-30_16-59-50_EMHASS–Home_Assistant.png)
 ![EMHASS cost](2024-11-30_17-00-11_EMHASS–Home_Assistant.png)
 ![EMHASS tabulka](2024-11-30_17-00-33_EMHASS–Home_Assistant.png)
+
+Se systémem si lze docela hrát, doporučuji si z příkladů zkopírovat / upravit grafy denní predikce, historie predikce a reálnou historii ( vyzadují apexchar a plotly graph) a sledovat chování systému.
 
 # Výkonná automatizace #
 Všechno pracuje a je načase i konat.
