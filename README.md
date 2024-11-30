@@ -1,5 +1,6 @@
 # EMHASS in Czech republic #
 Zprovoznění EMHASS managmentu energie pro použití s českými spotovými cenami v Home assistantovi jako Add-onu. Jelikož je návod určen pro české prostředí, je použita čeština.
+![denní predikce](2024-11-30_17-14-11_Radim–Home_Assistant.png)
 
 # Co je EMHASS? #
 EMHASS - Energy managment system je predikční systém, který na základě vstupů (spotřeba domácnosti, výroba fotovoltaiky, nabití baterie, ceny spotu, ...) dokáže řídit efektivní nabíjení / vybíjení baterie, ovládání spotřebičů s odložitelým spuštěním a podobně. Zprovoznění není úplná banalita, ale za výsledek to stojí. Samotná optimalizace se spouští odpoledne v 13:35, jakmile jsou známy nové spotové ceny na další den. Boiler je použit jako odložitelná zátěž a jelikož ho nahřívám v noci, dopoledne a odpoledne, tak model ho zpracovává jako 3 samostatné zátěže s různými časovými okny a automatizace si to pospojuje (deferrable012). Systém umí nastavit své chování, jestli jde o cenu, efektivní spotřebu energie nebo prodej.
