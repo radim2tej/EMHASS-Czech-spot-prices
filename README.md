@@ -1,15 +1,15 @@
 # EMHASS in Czech republic #
-Zprovoznění EMHASS managmentu energie pro použití s českými spotovými cenami v Home assistantovi jako Add-onu. Jelikož je to určeno pro české prostředí, je použita čeština.
+Zprovoznění EMHASS managmentu energie pro použití s českými spotovými cenami v Home assistantovi jako Add-onu. Jelikož je návod určen pro české prostředí, je použita čeština.
 
 # Co je EMHASS? #
-EMHASS je Energuy managment system - predikční systém, který na základě vstupů (spotřeba domácnosti, výroba Fotovoltaiky, nabití baterie, ceny spotu, ...) dokáže řídit efektivní nabíjení / vybíjení baterie, ovládání spotřebičů s odložitelnou dobou spuštění a podobně. Zprovoznění není úplná banalita, ale za výsledek to stojí. Samotná optimalizace se spouští odpoledne, jakmile jsou známy nové spotové ceny na další den. Boiler je použit jako odložitelná zátěž a jelikož ho nahřívám v noci, dopoledne a odpoledne, tak model ho zpracovává jako 3 samostatné zátěže v různých časech a automatizace si s tím poradí.
+EMHASS - Energy managment system je predikční systém, který na základě vstupů (spotřeba domácnosti, výroba fotovoltaiky, nabití baterie, ceny spotu, ...) dokáže řídit efektivní nabíjení / vybíjení baterie, ovládání spotřebičů s odložitelým spuštěním a podobně. Zprovoznění není úplná banalita, ale za výsledek to stojí. Samotná optimalizace se spouští odpoledne v 13:35, jakmile jsou známy nové spotové ceny na další den. Boiler je použit jako odložitelná zátěž a jelikož ho nahřívám v noci, dopoledne a odpoledne, tak model ho zpracovává jako 3 samostatné zátěže s různými časovými okny a automatizace si to pospojuje (deferrable012). Systém umí nastavit své chování, jestli jde o cenu, efektivní spotřebu energie nebo prodej.
 
 # Instalace #
 1. V doplňcích nainstalovat EMHASS (https://github.com/davidusb-geek/emhass-add-on) - je potřeba přidat repozitář a zvolit EMHASS jako add-on.
 2. V HACS přidat Nanogreen pro zjišťování spotových cen
-3. V HACS přidat Solcast PV Forecast pro předpověď výrovy solárního sysému. Je třeba se zaregistrovat na stránky a dodat svoji elektrárnu. Do Home assistanta budeme pak potřebovat API-Key a Roof ID.
-4. V HACS přidat GoodWe experimental pro ovládání elektrárny. V případě jeného měniče je třeba upravit)
-5. V zařízeních přidejte integraci FILE a přidejte službu zápisu oznámení do prvního souboru /share/data_load_cost_forecast.csv bez casoveho razitka a nastavte id_entity notify.file_load_cost_csv. Druhý soubor /share/data_prod_price_forecast.csv bez casoveho razitka a id_entity notify.file_sell_cost_csv.
+3. V HACS přidat Solcast PV Forecast pro předpověď výrovy solárního sysému. Je třeba se zaregistrovat na stránky a dodat svoji elektrárnu (sklon, orientace, výkon, poloha). Do Home assistanta budeme pak potřebovat API-Key a Roof ID. Je dobré si pak předpovědi přidat do energy boardu, jsou hodně přesné.
+4. V HACS přidat GoodWe experimental pro ovládání elektrárny. V případě jiného měniče je třeba upravit)
+5. V zařízeních přidejte integraci FILE a přidejte službu zápisu oznámení do prvního souboru /share/data_load_cost_forecast.csv bez časového razítka a nastavte id_entity notify.file_load_cost_csv. Druhý soubor /share/data_prod_price_forecast.csv bez časového razítka a id_entity notify.file_sell_cost_csv. Tímto budeme EMHASSu předávat spotové ceny nákupu a prodeje.
 6. Připojte se na filesystém Home assistanta a ve složce /share vytvořte soubor zero.csv , který obsahuje jednu mezeru.
 # Konfikurace #
 V Doplňcích / EMHASS / Nastavení nastavte dir /share, souřadnice long., lat. a alt,  solcast api, roof id a špičkový power elektrárny k kWp (s desetinnou čárkou)
@@ -224,8 +224,10 @@ Poslední senzor je spotřeba domu bez odložitelných zátěží - zde boileru.
 
 Součástí senzorů je i výpočet koncové ceny (final buy_kwh a energie final_sell_kwh) pro nákup a prodej. Je potřeba si ji upravit podle vašeho dodavatele / odběratele.
 
+Dejte restartovat HA pro načtení config.yaml
+
 # Provozní automatizace #
-Nejprve automatizace pro předpověď vyroby FVE pomocí Solcast (není nutné, ale budete mít v systému přesná aktuání předpovědní data):
+Nejprve automatizace pro předpověď výroby FVE pomocí Solcast (není nutné, ale budete mít v systému přesná aktuální předpovědní data):
 ```
 alias: Solcast update
 description: ""
@@ -323,11 +325,10 @@ mode: single
 ```
 
 # testování beta provozu #
-Nyní je systém připraven, ale zatím nená vliv na elektrárnu a spotřebiče.
-Predikční data lze prohlížet v EMHASSu.
+Nyní je systém připraven, ale zatím nemá vliv na elektrárnu a spotřebiče. Po prvním spuštění optimalizace (v odpoledních hodinách, aby systém znal 24h cen dopředu) a publikování lze predikční data lze prohlížet v EMHASSu.
 
 # Výkonná automatizace #
-Všechno pracuje a je načasei i konat.
+Všechno pracuje a je načase i konat.
 
 Automatizace na řízení baterie:
 ```
