@@ -1173,7 +1173,7 @@ cards:
     static_scale: 2
 columns: 1
 ```
-![gw](2024-11-30_18-49-26_Radim–Home_Assistant.png)
+![gw](2024-12-01_12-37-10_Radim–Home_Assistant.png)
 ```
 type: custom:sunsynk-power-flow-card
 cardstyle: full
