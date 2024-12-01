@@ -320,7 +320,7 @@ mode: single
 ```
 
 # Testování beta provozu #
-Nyní je systém připraven, ale zatím nemá vliv na elektrárnu a spotřebiče. Po prvním spuštění optimalizace (v odpoledních hodinách, aby systém znal ceny energie 24h dopředu) a publikování lze predikční data prohlížet v EMHASSu. Lze v něm také ručně spouštět optimalizace, jen brzy dojdou pokusy na předpověď počasí (max 10 denně). Můžete dočasně v konfiguraci EMHASSu změnit předpovědi Weather forecast method na scrapper.
+Nyní je systém připraven, ale zatím nemá vliv na elektrárnu a spotřebiče. Po prvním spuštění optimalizace a automatizaci (v odpoledních hodinách, aby systém znal ceny energie 24h dopředu a mohl vygenerovat aktuální cvs soubory s cenami) a publikování lze predikční data prohlížet v EMHASSu. Lze v něm také ručně spouštět optimalizace, jen brzy dojdou pokusy na předpověď počasí (max 10 denně). Můžete dočasně v konfiguraci EMHASSu změnit předpovědi Weather forecast method na scrapper.
 ![EMHASS power](2024-11-30_16-59-31_EMHASS–Home_Assistant.png)
 ![EMHASS battery](2024-11-30_16-59-50_EMHASS–Home_Assistant.png)
 ![EMHASS cost](2024-11-30_17-00-11_EMHASS–Home_Assistant.png)
