@@ -4,7 +4,7 @@ Zprovoznění EMHASS managmentu energie pro použití s českými spotovými cen
 # Co je EMHASS? #
 [EMHASS](https://emhass.readthedocs.io/en/latest/) - Energy managment system je predikční systém, který na základě vstupů (předpověď spotřeby domácnosti, předpověď výroby fotovoltaiky, stav nabití baterie, budoucí ceny energie na spotovém trhu, ...) dokáže řídit efektivní nabíjení / vybíjení baterie, ovládání spotřebičů s odložitelým spuštěním a podobně.
 
-Pruštění optimalizace je naplánováno na 13:05, jakmile jsou známy nové spotové ceny na další den. Boiler je použit jako odložitelná zátěž a jelikož ho nahřívám v noci, dopoledne a odpoledne, tak model ho zpracovává jako 3 samostatné zátěže (deferrable0, deferrable1 a deferrable2) s různými časovými okny a automatizace si to pospojuje do **deferrable012**. Systém umí nastavit své chování, jestli v optimalizaci jde o cenu, efektivní spotřebu energie nebo prodej podle vašeho přání.
+Spuštění optimalizace je naplánováno na 13:05, jakmile jsou známy nové spotové ceny na další den. Boiler je použit jako odložitelná zátěž a jelikož ho nahřívám v noci, dopoledne a odpoledne, tak model ho zpracovává jako 3 samostatné zátěže (deferrable0, deferrable1 a deferrable2) s různými časovými okny a automatizace si to pospojuje do **deferrable012**. Systém umí nastavit své chování, jestli v optimalizaci jde o cenu, efektivní spotřebu energie nebo prodej podle vašeho přání.
 ![denní predikce](2024-11-30_17-14-11_Radim–Home_Assistant.png)
 Zprovoznění není úplná banalita, ale za výsledek to stojí. 
 
