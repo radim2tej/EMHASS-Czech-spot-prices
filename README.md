@@ -4,7 +4,7 @@ Zprovoznění EMHASS managmentu energie pro použití s českými spotovými cen
 # Co je EMHASS? #
 [EMHASS](https://emhass.readthedocs.io/en/latest/) - Energy managment system je predikční systém, který na základě vstupů (předpověď spotřeby domácnosti, předpověď výroby fotovoltaiky, stav nabití baterie, budoucí ceny energie na spotovém trhu, ...) dokáže řídit efektivní nabíjení / vybíjení baterie, ovládání spotřebičů s odložitelým spuštěním a podobně.
 
-Spuštění optimalizace je naplánováno na 14:05, jakmile jsou známy nové spotové ceny na další den. Boiler je použit jako odložitelná zátěž a jelikož ho nahřívám v noci, dopoledne a odpoledne, tak model ho zpracovává jako 3 samostatné zátěže (deferrable0, deferrable1 a deferrable2) s různými časovými okny a automatizace si to pospojuje do **deferrable012**. Systém umí nastavit své chování, jestli v optimalizaci jde o cenu, efektivní spotřebu energie nebo prodej podle vašeho přání.
+Spuštění optimalizace je naplánováno na 14:02, kdy jsou známy nové spotové ceny na další den. Boiler je použit jako odložitelná zátěž a jelikož ho nahřívám v noci, dopoledne a odpoledne, tak model ho zpracovává jako 3 samostatné zátěže (deferrable0, deferrable1 a deferrable2) s různými časovými okny a automatizace si to pospojuje do **deferrable012**. Systém umí nastavit své chování, jestli v optimalizaci jde o cenu, efektivní spotřebu energie nebo prodej podle vašeho přání.
 ![denní predikce](2024-11-30_17-14-11_Radim–Home_Assistant.png)
 Zprovoznění není úplná banalita, ale za výsledek to stojí. 
 
@@ -30,20 +30,20 @@ Samotná konfigurace EMHASSu může vypadat následně (po přepnutí do textov�
   "battery_discharge_power_max": 8000,
   "battery_dynamic_max": 0.9,
   "battery_dynamic_min": -0.9,
-  "battery_maximum_state_of_charge": 0.85,
+  "battery_maximum_state_of_charge": 0.9,
   "battery_minimum_state_of_charge": 0.2,
   "battery_nominal_energy_capacity": 14200,
-  "battery_target_state_of_charge": 0.4,
+  "battery_target_state_of_charge": 0.55,
   "compute_curtailment": false,
   "continual_publish": false,
-  "costfun": "profit",
+  "costfun": "cost",
   "delta_forecast_daily": 1,
   "end_timesteps_of_each_deferrable_load": [
     9,
     29,
     45
   ],
-  "historic_days_to_retrieve": 7,
+  "historic_days_to_retrieve": 9,
   "inverter_is_hybrid": true,
   "load_cost_forecast_method": "csv",
   "load_forecast_method": "naive",
@@ -137,15 +137,14 @@ Samotná konfigurace EMHASSu může vypadat následně (po přepnutí do textov�
     25
   ],
   "treat_deferrable_load_as_semi_cont": [
-    false,
-    false,
-    false
+    true,
+    true,
+    true
   ],
   "weather_forecast_method": "solar.forecast",
   "weight_battery_charge": 1.5,
   "weight_battery_discharge": 1
-}
-```
+}```
 
 Do **config.yaml** přidat nastavení a senzory.
 ```
@@ -252,7 +251,7 @@ Generování **CSV** souborů s hodinovými cenami a spuštění optimalizace
 alias: EMHASS optimalizace
 description: ""
 triggers:
-  - at: "14:05:00"
+  - at: "14:02:00"
     trigger: time
 actions:
   - action: shell_command.restart_csv
@@ -302,6 +301,8 @@ actions:
           target:
             entity_id: notify.file_sell_cost_csv
   - action: shell_command.dayahead_optim
+    data: {}
+  - action: shell_command.publish_data
     data: {}
 ```
 Pravidelné publikování predikčních dat
