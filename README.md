@@ -232,7 +232,6 @@ sensor:
             {% endfor %}
             {{ ns.final }}
 
-
       home_load_no_var_loads:
         unit_of_measurement: 'W'
         device_class: power
