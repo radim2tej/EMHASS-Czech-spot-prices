@@ -246,31 +246,6 @@ Poslední senzor je spotřeba domu bez odložitelných zátěží - zde boileru.
 Dejte restartovat HA pro načtení config.yaml
 
 # Základní automatizace #
-Nejprve automatizace pro předpověď výroby FVE pomocí Solcast (není nutné, ale budete mít v systému přesná aktuální předpovědní data):
-```
-alias: Solcast update
-description: ""
-triggers:
-  - at: "23:58:00"
-    trigger: time
-  - at: "2:58:00"
-    trigger: time
-  - at: "6:58:00"
-    trigger: time
-  - at: "8:58:00"
-    trigger: time
-  - at: "10:58:00"
-    trigger: time
-  - at: "13:58:00"
-    trigger: time
-  - at: "16:58:00"
-    trigger: time
-conditions: []
-actions:
-  - data: {}
-    action: solcast_solar.update_forecasts
-mode: single
-```
 Generování **CSV** souborů s hodinovými cenami a spuštění optimalizace
 ```
 alias: EMHASS optimalizace
