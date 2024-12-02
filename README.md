@@ -148,6 +148,10 @@ Samotná konfigurace EMHASSu může vypadat následně (po přepnutí do textov�
   "weight_battery_discharge": 1
 }
 ```
+Metodz předpovědi výrobz FVE **Weather forecast method** jsou **scrapper**, **solcast**, **solar.foecast** a **csv**.
+1. scrapper potřebuje mít nadefinovánu zeměpisnou šířku, delku, typ panelů a typ měniče
+2. solcast potřebuje účet na webu solcast a z něj api-key a roof%id; zdarma poskytuje 10 žádostí denně s rozlišením 30 minut
+3. solar.forecast potřebuje maximální výkon panelů; poskytje 12 žádostí za hodinu s rozlišením 1h
 
 Do **config.yaml** přidat nastavení a senzory.
 ```
@@ -324,7 +328,7 @@ mode: single
 ```
 
 # Testování beta provozu #
-Nyní je systém připraven, ale zatím nemá vliv na elektrárnu a spotřebiče. Po prvním spuštění optimalizace a automatizaci (v odpoledních hodinách, aby systém znal ceny energie 24h dopředu a mohl vygenerovat aktuální cvs soubory s cenami) a publikování lze predikční data prohlížet v EMHASSu. Lze v něm také ručně spouštět optimalizace, jen brzy dojdou pokusy na předpověď počasí (max 10 denně). Můžete dočasně v konfiguraci EMHASSu změnit předpovědi Weather forecast method na scrapper.
+Nyní je systém připraven, ale zatím nemá vliv na elektrárnu a spotřebiče. Po prvním spuštění optimalizace a automatizaci (v odpoledních hodinách, aby systém znal ceny energie 24h dopředu a mohl vygenerovat aktuální cvs soubory s cenami) a publikování lze predikční data prohlížet v EMHASSu. Lze v něm také ručně spouštět optimalizace. Pozor na počty požadAvků na předpovědi, pro pokusy možná budete muset změnit **Weather forecast method**.
 ![EMHASS power](2024-11-30_16-59-31_EMHASS–Home_Assistant.png)
 ![EMHASS battery](2024-11-30_16-59-50_EMHASS–Home_Assistant.png)
 ![EMHASS cost](2024-11-30_17-00-11_EMHASS–Home_Assistant.png)
