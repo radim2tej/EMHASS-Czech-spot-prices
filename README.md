@@ -336,6 +336,7 @@ Může být zajímavé v testovacím provozu porovnat hodotu nákladů klacické
 Všechno pracuje a je načase i konat.
 
 **Skripty zatím neobsahují podporu prodeje elktřiny a hlídání prodeje při záporných cenách.**
+
 Automatizace na řízení baterie u GoodWe:
 ```
 alias: EMHASS battery control
