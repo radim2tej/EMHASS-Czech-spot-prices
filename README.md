@@ -1,6 +1,8 @@
 # EMHASS in Czech republic #
 Zprovoznění EMHASS managmentu energie pro použití s českými spotovými cenami v Home assistantovi jako Add-onu. Jelikož je návod určen pro české prostředí, je použita čeština.
 
+Uvedená konigurace je zprovozněna na měniči GoodWe 10K-ET, ale půjde upravit i na jiný měnič.
+
 # Co je EMHASS? #
 [EMHASS](https://emhass.readthedocs.io/en/latest/) - Energy managment system je predikční systém, který na základě vstupů (předpověď spotřeby domácnosti, předpověď výroby fotovoltaiky, stav nabití baterie, budoucí ceny energie na spotovém trhu, ...) dokáže řídit efektivní nabíjení / vybíjení baterie, ovládání spotřebičů s odložitelým spuštěním a nákup / prodej elektřiny.
 
@@ -92,10 +94,10 @@ Samotná konfigurace EMHASSu může vypadat následně (po přepnutí do textov�
   "photovoltaic_production_sell_price": 1,
   "production_price_forecast_method": "csv",
   "pv_inverter_model": [
-    "Fronius_International_GmbH__Fronius_Primo_5_0_1_208_240__240V_"
+    "GoodWe_Technologies_Co___Ltd___GW9600H_ES__240V_"
   ],
   "pv_module_model": [
-    "CSUN_Eurasia_Energy_Systems_Industry_and_Trade_CSUN295_60M"
+    "Trina_Solar_TSM_400DE09_08"
   ],
   "sensor_linear_interp": [
     "sensor.pv_power",
