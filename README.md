@@ -33,7 +33,7 @@ Samotná konfigurace EMHASSu může vypadat následně (po přepnutí do textov�
   "battery_maximum_state_of_charge": 0.9,
   "battery_minimum_state_of_charge": 0.2,
   "battery_nominal_energy_capacity": 14200,
-  "battery_target_state_of_charge": 0.55,
+  "battery_target_state_of_charge": 0.5,
   "compute_curtailment": false,
   "continual_publish": false,
   "costfun": "cost",
