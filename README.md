@@ -8,7 +8,6 @@ Uvedená konigurace je zprovozněna na měniči GoodWe 10K-ET, ale půjde upravi
 
 Spuštění optimalizace je naplánováno na 14:03, kdy jsou známy nové spotové ceny na další den. Boiler je použit jako odložitelná zátěž a jelikož ho nahřívám v noci, dopoledne a odpoledne, tak model ho zpracovává jako 3 samostatné zátěže (deferrable0, deferrable1 a deferrable2) s různými časovými okny a automatizace si to pospojuje do **deferrable012**. Systém umí nastavit své chování, jestli v optimalizaci jde o cenu, efektivní spotřebu energie nebo prodej podle vašeho přání.
 ![denní predikce](2024-11-30_17-14-11_Radim–Home_Assistant.png)
-Zprovoznění není úplná banalita, ale za výsledek to stojí. 
 
 # Instalace #
 1. V doplňcích nainstalovat **EMHASS** (https://github.com/davidusb-geek/emhass-add-on) - je potřeba přidat repozitář a zvolit EMHASS jako add-on.
