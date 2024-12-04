@@ -152,7 +152,7 @@ Jako Metoda předpovědi výroby FVE **Weather forecast method** je zvolena **so
 2. solcast potřebuje účet na webu solcast a z něj v nastavení nastaven api-key a roof%id; zdarma poskytuje 10 žádostí denně s rozlišením 30 minut
 3. solar.forecast potřebuje v nastavení maximální výkon panelů; poskytje 12 žádostí za hodinu s rozlišením 1h
 
-Do **config.yaml** přidat nastavení a senzory. Jsou zde přidány i senzory **import_power** a **export_power** pro správný výpošt spotřeb a utility meter pro nízký a vyskoý tarif.
+Do **config.yaml** přidat nastavení a senzory. Jsou zde přidány i senzory **import_power** a **export_power** pro správný výpočet spotřeb a utility meter pro nízký a vysoký tarif.
 ```
 homeassistant:
   customize: !include customize.yaml
