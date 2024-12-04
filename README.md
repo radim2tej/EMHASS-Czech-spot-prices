@@ -286,13 +286,12 @@ binary_sensor:
       deferrable012:
         value_template: "{{ states('sensor.p_deferrable0') | float(default=0) > 100 or states('sensor.p_deferrable1') | float(default=0) > 100 or states('sensor.p_deferrable2') | float(default=0) > 100}}" 
 
-# pro moje řízení boileru
+# pro moje řízení boileru, kdy do boileru podle teploty a nabiti baterie posilam prebytky pro nahrati na vyssi teplotu
   - platform: threshold
     name: kapacita_pro_boiler
     entity_id: sensor.prikon_bez_boileru
     lower: 1400
     hysteresis: 50
-
   - platform: threshold
     name: vlazny_boiler
     entity_id: sensor.teplota_boileru
@@ -571,7 +570,7 @@ actions:
 mode: single
 ```
 
-Příklad mojí automatizace pro ovládání boileru s teplotními čidly a přetoky do nahřívání boileru:
+Příklad mojí automatizace pro ovládání boileru s teplotními čidly, kdy do boileru podle teploty a nabiti baterie posilam prebytky pro nahrati na vyssi teplotu:
 ```
 alias: EMHASS Boiler s čidly teploty a FVE přebytky
 description: inteligentní dohřívání boileru a počítání spotřeby boileru z FVE a ze sítě
