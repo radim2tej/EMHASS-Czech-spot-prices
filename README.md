@@ -166,7 +166,7 @@ shell_command:
 
 utility_meter:
   electric:
-    source: sensor.import_wh    # sdm630
+    source: sensor.import_kwh
     cycle: yearly
     tariffs:
       - vt
