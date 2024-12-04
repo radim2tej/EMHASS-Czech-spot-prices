@@ -172,12 +172,6 @@ utility_meter:
       - vt
       - nt
 
-binary_sensor:
-  - platform: template
-    sensors:
-      deferrable012:
-        value_template: "{{ states('sensor.p_deferrable0') | float(default=0) > 100 or states('sensor.p_deferrable1') | float(default=0) > 100 or states('sensor.p_deferrable2') | float(default=0) > 100}}" 
-
 sensor:
   - platform: template
     sensors:
@@ -285,10 +279,29 @@ sensor:
     source: sensor.export_power
     method: left
     unit_prefix: k
+
+binary_sensor:
+  - platform: template
+    sensors:
+      deferrable012:
+        value_template: "{{ states('sensor.p_deferrable0') | float(default=0) > 100 or states('sensor.p_deferrable1') | float(default=0) > 100 or states('sensor.p_deferrable2') | float(default=0) > 100}}" 
+
+# pro moje řízení boileru
+  - platform: threshold
+    name: kapacita_pro_boiler
+    entity_id: sensor.prikon_bez_boileru
+    lower: 1400
+    hysteresis: 50
+
+  - platform: threshold
+    name: vlazny_boiler
+    entity_id: sensor.teplota_boileru
+    lower: 48
+    hysteresis: 0.2
 ```
 Součástí senzorů je i výpočet koncové ceny (final buy_kwh a energie final_sell_kwh) pro nákup a prodej. Je potřeba si ji upravit podle vašeho dodavatele / odběratele.
 
-Poslední senzor je spotřeba domu bez odložitelných zátěží - zde boileru.
+Senzor **home_load_no_val_loads** je spotřeba domu bez odložitelných zátěží - zde boileru.
 
 Dejte restartovat HA pro načtení config.yaml
 
