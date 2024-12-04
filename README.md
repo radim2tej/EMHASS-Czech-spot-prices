@@ -367,22 +367,7 @@ action:
 mode: single
 ```
 
-# Testování beta provozu #
-Nyní je systém připraven, ale zatím nemá vliv na elektrárnu a spotřebiče. Po prvním spuštění optimalizace a automatizaci (v odpoledních hodinách, aby systém znal ceny energie 24h dopředu a mohl vygenerovat aktuální cvs soubory s cenami) a publikování lze predikční data prohlížet v EMHASSu. Lze v něm také ručně spouštět optimalizace. Pozor na počty požadAvků na předpovědi, pro pokusy možná budete muset změnit **Weather forecast method**.
-![EMHASS power](2024-11-30_16-59-31_EMHASS–Home_Assistant.png)
-![EMHASS battery](2024-11-30_16-59-50_EMHASS–Home_Assistant.png)
-![EMHASS cost](2024-11-30_17-00-11_EMHASS–Home_Assistant.png)
-![EMHASS tabulka](2024-11-30_17-00-33_EMHASS–Home_Assistant.png)
-
-Se systémem si lze docela hrát, doporučuji si z příkladů zkopírovat / upravit grafy denní predikce, historie predikce a reálnou historii ( vyzadují apexchar a plotly graph) a sledovat chování systému.
-
-Může být zajímavé v testovacím provozu porovnat hodotu nákladů klacické denní spotřeby a predikované **Total cost function value**.
-
-# Akční automatizace #
-Všechno pracuje a je načase i konat.
-
-**Skripty zatím neobsahují podporu prodeje elktřiny a hlídání prodeje při záporných cenách.**
-Automatizace pro nízký - vysoký tarif elektřiny. Časy jsou natvrdo, jelikož pro FVE mám tarif PTV3 se stejnými časy po celý týden.
+Automatizace pro nízký - vysoký tarif elektřiny. Časy jsou natvrdo, jelikož pro FVE mám tarif PTV3 se stejnými časy po celý týden. Stav přepínače ovlivňuje cenu vpočtu spotové ceny (regulovaná část).
 ```
 alias: tarif ČEZ PTV3
 description: ""
@@ -415,26 +400,29 @@ actions:
         data:
           option: vt
         action: select.select_option
-      - device_id: 904cd0b7d9147d7b3b4ad392bb80d9a8
-        domain: select
-        entity_id: select.esp_intenzita
-        type: select_option
-        option: Vypnuto
-        enabled: false
     else:
       - target:
           entity_id: select.electric
         data:
           option: nt
         action: select.select_option
-      - device_id: 904cd0b7d9147d7b3b4ad392bb80d9a8
-        domain: select
-        entity_id: select.esp_intenzita
-        type: select_option
-        option: Střední
-        enabled: false
 ```
 
+# Testování beta provozu #
+Nyní je systém připraven, ale zatím nemá vliv na elektrárnu a spotřebiče. Po prvním spuštění optimalizace a automatizaci (v odpoledních hodinách, aby systém znal ceny energie 24h dopředu a mohl vygenerovat aktuální cvs soubory s cenami) a publikování lze predikční data prohlížet v EMHASSu. Lze v něm také ručně spouštět optimalizace. Pozor na počty požadAvků na předpovědi, pro pokusy možná budete muset změnit **Weather forecast method**.
+![EMHASS power](2024-11-30_16-59-31_EMHASS–Home_Assistant.png)
+![EMHASS battery](2024-11-30_16-59-50_EMHASS–Home_Assistant.png)
+![EMHASS cost](2024-11-30_17-00-11_EMHASS–Home_Assistant.png)
+![EMHASS tabulka](2024-11-30_17-00-33_EMHASS–Home_Assistant.png)
+
+Se systémem si lze docela hrát, doporučuji si z příkladů zkopírovat / upravit grafy denní predikce, historie predikce a reálnou historii ( vyzadují apexchar a plotly graph) a sledovat chování systému.
+
+Může být zajímavé v testovacím provozu porovnat hodotu nákladů klacické denní spotřeby a predikované **Total cost function value**.
+
+# Akční automatizace #
+Všechno pracuje a je načase i konat.
+
+**Skripty zatím neobsahují podporu prodeje elktřiny a hlídání prodeje při záporných cenách.**
 Automatizace na řízení baterie u GoodWe:
 ```
 alias: EMHASS battery control
