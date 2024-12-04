@@ -1,19 +1,19 @@
 # EMHASS in Czech republic #
 Zprovoznění EMHASS managmentu energie pro použití s českými spotovými cenami v Home assistantovi jako Add-onu. Jelikož je návod určen pro české prostředí, je použita čeština.
 
-Uvedená konigurace je zprovozněna na měniči GoodWe 10K-ET, ale půjde upravit i na jiný měnič.
+Uvedená konigurace je zprovozněna na měniči GoodWe 10K-ET s 6.4kWp panelů a 14.2kWh baterií Pylontech, ale půjde upravit i na jiný měnič. Pro výpočet je zvolena optimalizační metoda **dayahead**.
 
 # Co je EMHASS? #
-[EMHASS](https://emhass.readthedocs.io/en/latest/) - Energy managment system je predikční systém, který na základě vstupů (předpověď spotřeby domácnosti, předpověď výroby fotovoltaiky, stav nabití baterie, budoucí ceny energie na spotovém trhu, ...) dokáže řídit efektivní nabíjení / vybíjení baterie, ovládání spotřebičů s odložitelým spuštěním a nákup / prodej elektřiny.
+[EMHASS](https://emhass.readthedocs.io/en/latest/) - Energy managment system je predikční systém, který na základě vstupů (předpověď spotřeby domácnosti, předpověď výroby fotovoltaiky, stav nabití baterie, ceny energie na spotovém trhu, ...) dokáže řídit efektivní nabíjení / vybíjení baterie, ovládání spotřebičů s odložitelým spuštěním a nákup / prodej elektřiny.
 
-Spuštění optimalizace je naplánováno na 14:03, kdy jsou známy nové spotové ceny na další den. Boiler je použit jako odložitelná zátěž a jelikož ho nahřívám v noci, dopoledne a odpoledne, tak model ho zpracovává jako 3 samostatné zátěže (deferrable0, deferrable1 a deferrable2) s různými časovými okny a automatizace si to pospojuje do **deferrable012**. Systém umí nastavit své chování, jestli v optimalizaci jde o cenu, efektivní spotřebu energie nebo prodej podle vašeho přání.
+Spuštění optimalizace je naplánováno na 14:03, kdy jsou známy nové spotové ceny na další den. Boiler je použit jako odložitelná zátěž a jelikož ho nahřívám v noci, dopoledne a odpoledne, tak ho model zpracovává jako 3 samostatné odli6iteln0 zátěže (deferrable0, deferrable1 a deferrable2) s různými časovými okny a automatizace si e pospojuje do **deferrable012**. Systém umí nastavit své chování, jestli v optimalizaci jde o cenu, efektivní spotřebu energie nebo zisk podle vašeho přání.
 ![denní predikce](2024-11-30_17-14-11_Radim–Home_Assistant.png)
 
 # Instalace #
 1. V doplňcích nainstalovat **EMHASS** (https://github.com/davidusb-geek/emhass-add-on) - je potřeba přidat repozitář a zvolit EMHASS jako add-on.
-2. V HACS přidat **Nanogreen** pro zjišťování spotových cen
-3. V HACS přidat **Solcast PV Forecast** pro předpověď výrovy solárního sysému. Je třeba se zaregistrovat na stránky a dodat svoji elektrárnu (sklon, orientace, výkon, poloha). Do Home assistanta budeme pak potřebovat API-Key a Roof ID. Je dobré si pak předpovědi přidat do energy boardu, jsou hodně přesné.
-4. V HACS přidat **GoodWe Inverter (experimental)** pro ovládání elektrárny. V případě jiného měniče je třeba upravit)
+2. V HACS přidat **Nanogreen** pro zjišťování spotových cen.
+3. V HACS přidat **Solcast PV Forecast** pro předpověď výroby solárního systému 'solcast'. Je třeba se zaregistrovat na stránky a dodat svoji elektrárnu (sklon, orientace, výkon, poloha). Do Home assistanta budeme pak potřebovat API-Key a Roof ID. Je dobré si pak předpovědi přidat do energy boardu, jsou hodně přesné.
+4. V HACS přidat **GoodWe Inverter (experimental)** pro ovládání elektrárny. V případě jiného měniče je třeba upravit.
 5. V zařízeních přidejte integraci **FILE** a přidejte službu zápisu oznámení do prvního souboru **/share/data_load_cost_forecast.csv** bez časového razítka a nastavte id_entity **notify.file_load_cost_csv**. Druhý soubor **/share/data_prod_price_forecast.csv** bez časového razítka a id_entity **notify.file_sell_cost_csv**. Tímto budeme EMHASSu předávat spotové ceny nákupu a prodeje.
 6. Připojte se na filesystém Home assistanta a ve složce **/share** vytvořte soubor **zero.csv**, který obsahuje jednu mezeru.
 7. Volitelně pro vizualizaci v HACS **apexchart-card**, **Plotly graph card**, **Sankey Chart Card** a **Sunsynk-Power-Flow-Card**.
@@ -37,14 +37,14 @@ Samotná konfigurace EMHASSu může vypadat následně (po přepnutí do textov�
   "battery_target_state_of_charge": 0.5,
   "compute_curtailment": false,
   "continual_publish": false,
-  "costfun": "cost",
+  "costfun": "profit",
   "delta_forecast_daily": 1,
   "end_timesteps_of_each_deferrable_load": [
     9,
     29,
     45
   ],
-  "historic_days_to_retrieve": 9,
+  "historic_days_to_retrieve": 10,
   "inverter_is_hybrid": true,
   "load_cost_forecast_method": "csv",
   "load_forecast_method": "naive",
@@ -142,17 +142,17 @@ Samotná konfigurace EMHASSu může vypadat následně (po přepnutí do textov�
     true,
     true
   ],
-  "weather_forecast_method": "solar.forecast",
+  "weather_forecast_method": "solcast",
   "weight_battery_charge": 1.5,
-  "weight_battery_discharge": 1
+  "weight_battery_discharge": 2
 }
 ```
-Metodz předpovědi výrobz FVE **Weather forecast method** jsou **scrapper**, **solcast**, **solar.foecast** a **csv**.
-1. scrapper potřebuje mít nadefinovánu zeměpisnou šířku, delku, typ panelů a typ měniče
-2. solcast potřebuje účet na webu solcast a z něj api-key a roof%id; zdarma poskytuje 10 žádostí denně s rozlišením 30 minut
-3. solar.forecast potřebuje maximální výkon panelů; poskytje 12 žádostí za hodinu s rozlišením 1h
+Jako Metoda předpovědi výroby FVE **Weather forecast method** je zvolena **solcast**, ale jsou zde na výběr i jiné: **scrapper**, **solar.foecast** a **csv**.
+1. scrapper potřebuje mít v nastavení nadefinovánu zeměpisnou šířku, delku a v konfiguraci typ panelů a typ měniče
+2. solcast potřebuje účet na webu solcast a z něj v nastavení nastaven api-key a roof%id; zdarma poskytuje 10 žádostí denně s rozlišením 30 minut
+3. solar.forecast potřebuje v nastavení maximální výkon panelů; poskytje 12 žádostí za hodinu s rozlišením 1h
 
-Do **config.yaml** přidat nastavení a senzory.
+Do **config.yaml** přidat nastavení a senzory. Jsou zde přidány i senzory **import_power** a **export_power** pro správný výpošt spotřeb a utility meter pro nízký a vyskoý tarif.
 ```
 homeassistant:
   customize: !include customize.yaml
@@ -164,6 +164,14 @@ shell_command:
   dayahead_optim: "curl -i -H \"Content-Type:application/json\" -X POST -d '{}' http://localhost:5000/action/dayahead-optim"
   publish_data: "curl -i -H \"Content-Type:application/json\" -X POST -d '{}' http://localhost:5000/action/publish-data"
 
+utility_meter:
+  electric:
+    source: sensor.import_wh    # sdm630
+    cycle: yearly
+    tariffs:
+      - vt
+      - nt
+
 binary_sensor:
   - platform: template
     sensors:
@@ -173,6 +181,20 @@ binary_sensor:
 sensor:
   - platform: template
     sensors:
+      import_power:            # FVE
+        unit_of_measurement: 'W'
+        device_class: power
+        unique_id: import_power_solar
+        value_template: >-
+          {{ ((states('sensor.active_power_l1') | float < 0) * states('sensor.active_power_l1') | float * -1) + ((states('sensor.active_power_l2') | float < 0) * states('sensor.active_power_l2') | float * -1) + ((states('sensor.active_power_l3') | float < 0) * states('sensor.active_power_l3') | float * -1)}}
+
+      export_power:            # FVE
+        unit_of_measurement: 'W'
+        device_class: power
+        unique_id: export_power_solar
+        value_template: >-
+          {{ ((states('sensor.active_power_l1') | float > 0) * states('sensor.active_power_l1') | float) + ((states('sensor.active_power_l2') | float > 0) * states('sensor.active_power_l2') | float) + ((states('sensor.active_power_l3') | float > 0) * states('sensor.active_power_l3') | float)}}
+
       final_buy_kwh:
         unit_of_measurement: 'CZK/kWh'
         device_class: monetary
@@ -239,11 +261,30 @@ sensor:
             {% endfor %}
             {{ ns.final }}
 
+# spotřeba domu bez odlozitelného spotřebiče (boileru)
       home_load_no_var_loads:
         unit_of_measurement: 'W'
         device_class: power
         value_template: "{{ states('sensor.load') | int + (states('sensor.back_up_load') | int) - (states('sensor.zasuvka_boiler_napajeni') | int) }}"
 
+# volitelně pro boiler, aby spotřeba na fázi, kde je připojen nepekročila limit měniče a nedocucával ze sítě:
+      prikon_bez_boileru:
+        unit_of_measurement: 'W'
+        device_class: power
+        value_template: >-
+          {{ states('sensor.load_l1') | float(default=0) + (states('sensor.back_up_l1_power') | float(default=0)) - (states('sensor.zasuvka_boiler_napajeni') | float(default=0)) }}
+
+  - platform: integration
+    name: import_kWh
+    source: sensor.import_power
+    method: left
+    unit_prefix: k
+
+  - platform: integration
+    name: export_kWh
+    source: sensor.export_power
+    method: left
+    unit_prefix: k
 ```
 Součástí senzorů je i výpočet koncové ceny (final buy_kwh a energie final_sell_kwh) pro nákup a prodej. Je potřeba si ji upravit podle vašeho dodavatele / odběratele.
 
@@ -341,6 +382,58 @@ Může být zajímavé v testovacím provozu porovnat hodotu nákladů klacické
 Všechno pracuje a je načase i konat.
 
 **Skripty zatím neobsahují podporu prodeje elktřiny a hlídání prodeje při záporných cenách.**
+Automatizace pro nízký - vysoký tarif elektřiny. Časy jsou natvrdo, jelikož pro FVE mám tarif PTV3 se stejnými časy po celý týden.
+```
+alias: tarif ČEZ PTV3
+description: ""
+mode: single
+triggers:
+  - minutes: "0"
+    hours: "*"
+    seconds: "2"
+    trigger: time_pattern
+conditions: []
+actions:
+  - if:
+      - condition: or
+        conditions:
+          - condition: time
+            after: "08:00:00"
+            before: "09:00:00"
+          - condition: time
+            after: "12:00:00"
+            before: "13:00:00"
+          - condition: time
+            after: "15:00:00"
+            before: "16:00:00"
+          - condition: time
+            after: "19:00:00"
+            before: "20:00:00"
+    then:
+      - target:
+          entity_id: select.electric
+        data:
+          option: vt
+        action: select.select_option
+      - device_id: 904cd0b7d9147d7b3b4ad392bb80d9a8
+        domain: select
+        entity_id: select.esp_intenzita
+        type: select_option
+        option: Vypnuto
+        enabled: false
+    else:
+      - target:
+          entity_id: select.electric
+        data:
+          option: nt
+        action: select.select_option
+      - device_id: 904cd0b7d9147d7b3b4ad392bb80d9a8
+        domain: select
+        entity_id: select.esp_intenzita
+        type: select_option
+        option: Střední
+        enabled: false
+```
 
 Automatizace na řízení baterie u GoodWe:
 ```
