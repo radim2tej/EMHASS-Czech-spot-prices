@@ -1,12 +1,12 @@
 # EMHASS in Czech republic #
 Zprovoznění EMHASS managmentu energie pro použití s českými spotovými cenami v Home assistantovi jako Add-onu. Jelikož je návod určen pro české prostředí, je použita čeština.
 
-Uvedená konigurace je zprovozněna na měniči GoodWe 10K-ET s 6.4kWp panelů a 14.2kWh baterií Pylontech, ale půjde upravit i na jiný měnič. Pro výpočet je zvolena optimalizační metoda **dayahead**.
+Uvedená konigurace je zprovozněna na měniči GoodWe 10K-ET s 6.4kWp panelů a 14.2kWh baterií Pylontech, ale půjde upravit i na jiný měnič. Pro výpočet je zvolena optimalizační metoda **dayahead** v kombinaci s **MPC**.
 
 # Co je EMHASS? #
 [EMHASS](https://emhass.readthedocs.io/en/latest/) - Energy managment system je predikční systém, který na základě vstupů (předpověď spotřeby domácnosti, předpověď výroby fotovoltaiky, stav nabití baterie, ceny energie na spotovém trhu, ...) dokáže řídit efektivní nabíjení / vybíjení baterie, ovládání spotřebičů s odložitelým spuštěním a nákup / prodej elektřiny.
 
-Spuštění optimalizace je naplánováno na 14:03, kdy jsou známy nové spotové ceny na další den. Boiler je použit jako odložitelná zátěž a jelikož ho nahřívám v noci, dopoledne a odpoledne, tak ho model zpracovává jako 3 samostatné odli6iteln0 zátěže (deferrable0, deferrable1 a deferrable2) s různými časovými okny a automatizace si e pospojuje do **deferrable012**. Systém umí nastavit své chování, jestli v optimalizaci jde o cenu, efektivní spotřebu energie nebo zisk podle vašeho přání.
+Spuštění dayahead optimalizace je naplánováno na 14:03 a během dne je pak spouštěna MPC, kdy jsou známy nové spotové ceny na další den. Boiler je použit jako odložitelná zátěž a jelikož ho nahřívám v noci, dopoledne a odpoledne, tak ho model zpracovává jako 3 samostatné odli6iteln0 zátěže (deferrable0, deferrable1 a deferrable2) s různými časovými okny a automatizace si e pospojuje do **deferrable012**. Systém umí nastavit své chování, jestli v optimalizaci jde o cenu, efektivní spotřebu energie nebo zisk podle vašeho přání.
 ![denní predikce](2024-11-30_17-14-11_Radim–Home_Assistant.png)
 
 # Instalace #
@@ -142,7 +142,7 @@ Samotná konfigurace EMHASSu může vypadat následně (po přepnutí do textov�
     true,
     true
   ],
-  "weather_forecast_method": "solcast",
+  "weather_forecast_method": "scrapper",
   "weight_battery_charge": 1.5,
   "weight_battery_discharge": 2
 }
@@ -161,7 +161,8 @@ homeassistant:
   
 shell_command:
   restart_csv: cp /share/zero.csv /share/data_load_cost_forecast.csv; cp /share/zero.csv /share/data_prod_price_forecast.csv
-  dayahead_optim: "curl -i -H \"Content-Type:application/json\" -X POST -d '{}' http://localhost:5000/action/dayahead-optim"
+  dayahead_optim: "curl -i -H \"Content-Type:application/json\" -X POST -d '{}} }' http://localhost:5000/action/dayahead-optim"
+  naive_mpc_optim: "curl -i -H \"Content-Type:application/json\" -X POST -d '{\"prediction_horizon\":{{ states('sensor.mpc_horizon') }}, \"soc_init\": {{ (states('sensor.battery_state_of_charge')|float(20))/100 }},\"soc_final\":{{ state_attr('sensor.mpc_horizon','soc_final') }},\"operating_hours_of_each_deferrable_load\":{{ state_attr('sensor.mpc_horizon','def_len') }},\"start_timesteps_of_each_deferrable_load\":{{ state_attr('sensor.mpc_horizon','def_start') }},\"end_timesteps_of_each_deferrable_load\":{{ state_attr('sensor.mpc_horizon','def_end') }} }' http://localhost:5000/action/naive-mpc-optim"
   publish_data: "curl -i -H \"Content-Type:application/json\" -X POST -d '{}' http://localhost:5000/action/publish-data"
 
 utility_meter:
@@ -268,6 +269,50 @@ sensor:
         value_template: >-
           {{ states('sensor.load_l1') | float(default=0) + (states('sensor.back_up_l1_power') | float(default=0)) - (states('sensor.zasuvka_boiler_napajeni') | float(default=0)) }}
 
+# data pro MPC
+      mpc_horizon: # vypocte delku MPC horizontu do 14:00 (min. delka 5 kvuli MPC)
+        value_template: "{{ max(5,(14 + (now().hour >= 14)*24 - now().hour)*2 - (now().minute >= 30)) }}"
+        attribute_templates:
+          power: >-
+            {% set buy = state_attr('sensor.final_buy_kwh','hourly_prices') %}
+            {% set ns = namespace(lpf = []) %}
+            {% for i in range(0, states('sensor.mpc_horizon')|int) %}
+              {% set ns.lpf = ns.lpf + [ buy[((2*now().hour + (now().minute >= 30) + i)/2) | int] ] %}
+            {% endfor %}
+            {{ ns.lpf }}
+          cost: >-
+            {% set sell = state_attr('sensor.final_sell_kwh','hourly_prices') %}
+            {% set ns = namespace(lcf = []) %}
+            {% for i in range(0, states('sensor.mpc_horizon')|int) %}
+              {% set ns.lcf = ns.lcf + [ sell[((2*now().hour + (now().minute >= 30) + i)/2) | int] ] %}
+            {% endfor %}
+            {{ ns.lcf }}
+          soc_final: "{{ (now().month == 12 or now().month == 1)*0.2 + 0.4 }}"
+          def_len: >-
+            {% if now().hour < 6 or now().hour >= 18 %} 
+              {{ [0,2,1.5] }}
+            {% elif now().hour < 12 %} 
+              {{ [0,0,1.5] }}
+            {% elif now().hour < 14 %} 
+              {{ [0,0,0] }}
+            {% else %} 
+              {{ [2,2,1.5] }}
+            {% endif %} 
+          def_start: >-
+            {% set interval = [0,16,38] %}
+            {% set ns = namespace(out=[]) %}
+            {% for i in interval %}
+              {% set ns.out = ns.out + [max(0, i - (now().hour + (now().hour < 14)*24 - 14)*2 - (now().minute > 30))] %}
+            {% endfor %}
+            {{ ns.out }}
+          def_end: >- 
+            {% set interval = [8,30,44] %}
+            {% set ns = namespace(out=[]) %}
+            {% for i in interval %}
+              {% set ns.out = ns.out + [max(0, i - (now().hour + (now().hour < 14)*24 - 14)*2 - (now().minute > 30))] %}
+            {% endfor %}
+            {{ ns.out }}
+
   - platform: integration
     name: import_kWh
     source: sensor.import_power
@@ -307,7 +352,7 @@ Dejte restartovat HA pro načtení config.yaml
 # Základní automatizace #
 Generování **CSV** souborů s hodinovými cenami a spuštění optimalizace
 ```
-alias: EMHASS optimalizace
+alias: EMHASS dayahead + MPC optimalizace
 description: ""
 triggers:
   - at: "14:03:00"
@@ -317,45 +362,31 @@ actions:
     data: {}
   - variables:
       prices: "{{ state_attr('sensor.final_buy_kwh', 'hourly_prices') }}"
-      start_time: "{{ now().replace(minute=0, second=0) }}"
+      start_time: "{{ now().replace(minute=(now().minute >= 30) * 30, second=0) }}"
   - repeat:
-      count: 24
+      count: 48
       sequence:
         - data:
             message: >-
               {{ (as_datetime(start_time) + (repeat.index-1) *
-              timedelta(minutes=60)).strftime('%Y-%m-%d %H:%M:%S') }},  {{
-              prices[repeat.index+now().hour-1] | round(2) }}
-          action: notify.send_message
-          target:
-            entity_id: notify.file_load_cost_csv
-        - data:
-            message: >-
-              {{ (as_datetime(start_time) + (repeat.index-1) *
-              timedelta(minutes=60) + timedelta(minutes=30)).strftime('%Y-%m-%d
-              %H:%M:%S') }},  {{ prices[repeat.index+now().hour-1] | round(2) }}
+              timedelta(minutes=30)).strftime('%Y-%m-%d %H:%M:%S') }}, {{
+              prices[((now().hour * 2 + (now().minute >= 30) +
+              repeat.index-1)/2) | int] | round(2) }}
           action: notify.send_message
           target:
             entity_id: notify.file_load_cost_csv
   - variables:
       prices: "{{ state_attr('sensor.final_sell_kwh', 'hourly_prices') }}"
-      start_time: "{{ now().replace(minute=0, second=0) }}"
+      start_time: "{{ now().replace(minute=(now().minute >= 30) * 30, second=0) }}"
   - repeat:
-      count: 24
+      count: 48
       sequence:
         - data:
             message: >-
               {{ (as_datetime(start_time) + (repeat.index-1) *
-              timedelta(minutes=60)).strftime('%Y-%m-%d %H:%M:%S') }},  {{
-              prices[repeat.index+now().hour-1] | round(2) }}
-          action: notify.send_message
-          target:
-            entity_id: notify.file_sell_cost_csv
-        - data:
-            message: >-
-              {{ (as_datetime(start_time) + (repeat.index-1) *
-              timedelta(minutes=60) + timedelta(minutes=30)).strftime('%Y-%m-%d
-              %H:%M:%S') }},  {{ prices[repeat.index+now().hour-1] | round(2) }}
+              timedelta(minutes=30)).strftime('%Y-%m-%d %H:%M:%S') }}, {{
+              prices[((now().hour * 2 + (now().minute >= 30) +
+              repeat.index-1)/2) | int] | round(2) }}
           action: notify.send_message
           target:
             entity_id: notify.file_sell_cost_csv
@@ -363,7 +394,74 @@ actions:
     data: {}
   - action: shell_command.publish_data
     data: {}
+    enabled: false
+  - action: automation.trigger
+    metadata: {}
+    data:
+      skip_condition: true
+    target:
+      entity_id: automation.emhass_naive_mpc_optimalizace
+    enabled: true
 ```
+
+MPC optimalizace
+```
+alias: EMHASS MPC optimalizace
+description: ""
+triggers:
+  - at: "18:03:00"
+    trigger: time
+  - at: "20:03:00"
+    trigger: time
+  - at: "22:03:00"
+    trigger: time
+  - at: "05:33:00"
+    trigger: time
+  - at: "07:33:00"
+    trigger: time
+  - at: "09:03:00"
+    trigger: time
+  - at: "12:03:00"
+    trigger: time
+actions:
+  - action: shell_command.restart_csv
+    data: {}
+  - variables:
+      prices: "{{ state_attr('sensor.final_buy_kwh', 'hourly_prices') }}"
+      start_time: "{{ now().replace(minute=(now().minute >= 30) * 30, second=0) }}"
+  - repeat:
+      count: "{{ states('sensor.mpc_horizon') }}"
+      sequence:
+        - data:
+            message: >-
+              {{ (as_datetime(start_time) + (repeat.index-1) *
+              timedelta(minutes=30)).strftime('%Y-%m-%d %H:%M:%S') }}, {{
+              prices[((now().hour * 2 + (now().minute >= 30) +
+              repeat.index-1)/2) | int] | round(2) }}
+          action: notify.send_message
+          target:
+            entity_id: notify.file_load_cost_csv
+  - variables:
+      prices: "{{ state_attr('sensor.final_sell_kwh', 'hourly_prices') }}"
+      start_time: "{{ now().replace(minute=(now().minute >= 30) * 30, second=0) }}"
+  - repeat:
+      count: "{{ states('sensor.mpc_horizon') }}"
+      sequence:
+        - data:
+            message: >-
+              {{ (as_datetime(start_time) + (repeat.index-1) *
+              timedelta(minutes=30)).strftime('%Y-%m-%d %H:%M:%S') }}, {{
+              prices[((now().hour * 2 + (now().minute >= 30) +
+              repeat.index-1)/2) | int] | round(2) }}
+          action: notify.send_message
+          target:
+            entity_id: notify.file_sell_cost_csv
+  - action: shell_command.naive_mpc_optim
+    data: {}
+  - action: shell_command.publish_data
+    data: {}
+```
+
 Pravidelné publikování predikčních dat
 ```
 alias: EMHASS publish
