@@ -6,7 +6,7 @@ Uvedená konigurace je zprovozněna na měniči GoodWe 10K-ET s 6.4kWp panelů a
 # Co je EMHASS? #
 [EMHASS](https://emhass.readthedocs.io/en/latest/) - Energy managment system je predikční systém, který na základě vstupů (předpověď spotřeby domácnosti, předpověď výroby fotovoltaiky, stav nabití baterie, ceny energie na spotovém trhu, ...) dokáže řídit efektivní nabíjení / vybíjení baterie, ovládání spotřebičů s odložitelým spuštěním a nákup / prodej elektřiny.
 
-Spuštění dayahead optimalizace je naplánováno na 14:03 a během dne je pak spouštěna MPC, kdy jsou známy nové spotové ceny na další den. Boiler je použit jako odložitelná zátěž a jelikož ho nahřívám v noci, dopoledne a odpoledne, tak ho model zpracovává jako 3 samostatné odli6iteln0 zátěže (deferrable0, deferrable1 a deferrable2) s různými časovými okny a automatizace si e pospojuje do **deferrable012**. Systém umí nastavit své chování, jestli v optimalizaci jde o cenu, efektivní spotřebu energie nebo zisk podle vašeho přání.
+Spuštění dayahead optimalizace je naplánováno na 14:03, kdy jsou známy nové spotové ceny na další den a během dne je pak spouštěna MPC, kdy se upresňuje aktuální energie v baterii. Boiler je použit jako odložitelná zátěž a jelikož ho nahřívám v noci, dopoledne a odpoledne, tak ho model zpracovává jako 3 samostatné odli6iteln0 zátěže (deferrable0, deferrable1 a deferrable2) s různými časovými okny a automatizace si e pospojuje do **deferrable012**. Systém umí nastavit své chování, jestli v optimalizaci jde o cenu, efektivní spotřebu energie nebo zisk podle vašeho přání.
 ![denní predikce](2024-11-30_17-14-11_Radim–Home_Assistant.png)
 
 # Instalace #
@@ -400,8 +400,7 @@ actions:
     data:
       skip_condition: true
     target:
-      entity_id: automation.emhass_naive_mpc_optimalizace
-    enabled: true
+      entity_id: automation.emhass_mpc_optimalizace
 ```
 
 MPC optimalizace
