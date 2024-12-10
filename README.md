@@ -414,7 +414,7 @@ triggers:
     trigger: time
   - at: "22:03:00"
     trigger: time
-  - at: "05:33:00"
+  - at: "06:03:00"
     trigger: time
   - at: "07:33:00"
     trigger: time
