@@ -414,37 +414,37 @@ alias: EMHASS MPC optimalizace
 description: ""
 triggers:
   - trigger: time
-    at: "22:05:00"
+    at: "22:03:30"
   - trigger: time
-    at: "23:05:00"
+    at: "23:03:30"
   - trigger: time
-    at: "0:05:00"
+    at: "0:03:30"
   - trigger: time
-    at: "1:05:00"
+    at: "1:03:30"
   - trigger: time
-    at: "2:05:00"
+    at: "2:03:30"
   - trigger: time
-    at: "3:05:00"
+    at: "3:03:30"
   - trigger: time
-    at: "4:05:00"
+    at: "4:03:30"
   - trigger: time
-    at: "5:05:00"
+    at: "5:03:30"
   - trigger: time
-    at: "6:05:00"
+    at: "6:03:30"
   - trigger: time
-    at: "7:05:00"
+    at: "7:03:30"
   - trigger: time
-    at: "8:05:00"
+    at: "8:03:30"
   - trigger: time
-    at: "9:05:00"
+    at: "9:03:30"
   - trigger: time
-    at: "10:05:00"
+    at: "10:03:30"
   - trigger: time
-    at: "11:05:00"
+    at: "11:03:30"
   - trigger: time
-    at: "12:05:00"
+    at: "12:03:30"
   - trigger: time
-    at: "13:05:00"
+    at: "13:03:30"
 actions:
   - action: shell_command.restart_csv
     data: {}
