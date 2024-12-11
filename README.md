@@ -26,7 +26,7 @@ Samotná konfigurace EMHASSu může vypadat následně (po přepnutí do textov�
 ```
 {
   "battery_charge_efficiency": 0.9,
-  "battery_charge_power_max": 7200,
+  "battery_charge_power_max": 6000,
   "battery_discharge_efficiency": 0.9,
   "battery_discharge_power_max": 8000,
   "battery_dynamic_max": 0.9,
@@ -161,8 +161,8 @@ homeassistant:
   
 shell_command:
   restart_csv: cp /share/zero.csv /share/data_load_cost_forecast.csv; cp /share/zero.csv /share/data_prod_price_forecast.csv
-  dayahead_optim: "curl -i -H \"Content-Type:application/json\" -X POST -d '{}} }' http://localhost:5000/action/dayahead-optim"
-  naive_mpc_optim: "curl -i -H \"Content-Type:application/json\" -X POST -d '{\"prediction_horizon\":{{ states('sensor.mpc_horizon') }}, \"soc_init\": {{ (states('sensor.battery_state_of_charge')|float(20))/100 }},\"soc_final\":{{ state_attr('sensor.mpc_horizon','soc_final') }},\"operating_hours_of_each_deferrable_load\":{{ state_attr('sensor.mpc_horizon','def_len') }},\"start_timesteps_of_each_deferrable_load\":{{ state_attr('sensor.mpc_horizon','def_start') }},\"end_timesteps_of_each_deferrable_load\":{{ state_attr('sensor.mpc_horizon','def_end') }} }' http://localhost:5000/action/naive-mpc-optim"
+  dayahead_optim: "curl -i -H \"Content-Type:application/json\" -X POST -d '{}' http://localhost:5000/action/dayahead-optim"
+  naive_mpc_optim: "curl -i -H \"Content-Type:application/json\" -X POST -d '{\"prediction_horizon\":{{ state_attr('sensor.mpc_final','intervals') }},\"soc_init\":{{ (states('sensor.battery_state_of_charge')|float(20))/100 }},\"soc_final\":{{ state_attr('sensor.mpc_final','soc_final') }},\"operating_hours_of_each_deferrable_load\":{{ state_attr('sensor.mpc_final','def_len') }},\"start_timesteps_of_each_deferrable_load\":{{ state_attr('sensor.mpc_final','def_start') }},\"end_timesteps_of_each_deferrable_load\":{{ state_attr('sensor.mpc_final','def_end') }} }' http://localhost:5000/action/naive-mpc-optim"
   publish_data: "curl -i -H \"Content-Type:application/json\" -X POST -d '{}' http://localhost:5000/action/publish-data"
 
 utility_meter:
@@ -270,46 +270,56 @@ sensor:
           {{ states('sensor.load_l1') | float(default=0) + (states('sensor.back_up_l1_power') | float(default=0)) - (states('sensor.zasuvka_boiler_napajeni') | float(default=0)) }}
 
 # data pro MPC
-      mpc_horizon: # vypocte delku MPC horizontu do 14:00 (min. delka 5 kvuli MPC)
-        value_template: "{{ max(5,(14 + (now().hour >= 14)*24 - now().hour)*2 - (now().minute >= 30)) }}"
+      mpc_final: # vypocte delku MPC parametru do value_teplate (min. delka 5 kvuli MPC)
+        value_template: 22
         attribute_templates:
-          power: >-
-            {% set buy = state_attr('sensor.final_buy_kwh','hourly_prices') %}
-            {% set ns = namespace(lpf = []) %}
-            {% for i in range(0, states('sensor.mpc_horizon')|int) %}
-              {% set ns.lpf = ns.lpf + [ buy[((2*now().hour + (now().minute >= 30) + i)/2) | int] ] %}
-            {% endfor %}
-            {{ ns.lpf }}
-          cost: >-
-            {% set sell = state_attr('sensor.final_sell_kwh','hourly_prices') %}
-            {% set ns = namespace(lcf = []) %}
-            {% for i in range(0, states('sensor.mpc_horizon')|int) %}
-              {% set ns.lcf = ns.lcf + [ sell[((2*now().hour + (now().minute >= 30) + i)/2) | int] ] %}
-            {% endfor %}
-            {{ ns.lcf }}
-          soc_final: "{{ (now().month == 12 or now().month == 1)*0.2 + 0.4 }}"
+          soc_final: >-
+            {% if now().month == 12 or now().month == 1 %}
+              {{ 0.6 }}
+            {% elif now().month >= 10 or now().month <= 3 %}
+              {{ 0.4 }}
+            {% else %}
+              {{ 0.3 }}
+            {% endif %}
+          intervals: "{{ max(5,(states('sensor.mpc_final')|int + (now().hour >= states('sensor.mpc_final')|int)*24 - now().hour)*2 - (now().minute/30)|int) }}"
           def_len: >-
-            {% if now().hour < 6 or now().hour >= 18 %} 
-              {{ [0,2,1.5] }}
-            {% elif now().hour < 12 %} 
-              {{ [0,0,1.5] }}
-            {% elif now().hour < 14 %} 
-              {{ [0,0,0] }}
-            {% else %} 
-              {{ [2,2,1.5] }}
-            {% endif %} 
-          def_start: >-
-            {% set interval = [0,16,38] %}
+            {% set start = state_attr('sensor.mpc_final','def_start') %}
+            {% set end = state_attr('sensor.mpc_final','def_end') %}
+            {% set len = [2,1.5,2] %}
             {% set ns = namespace(out=[]) %}
-            {% for i in interval %}
-              {% set ns.out = ns.out + [max(0, i - (now().hour + (now().hour < 14)*24 - 14)*2 - (now().minute > 30))] %}
+            {% if now().hour < 5 and now().hour >= 22 %} 
+              {% set ns.out = [min(end[0] - start[0], len[0])] %}
+            {% else %}  
+              {% set ns.out = [0] %}
+            {% endif %}
+            {% if now().hour < 12 %} 
+              {% set ns.out = ns.out + [min(end[1] - start[1], len[1])] %}
+            {% else %}  
+              {% set ns.out = ns.out + [0] %}
+            {% endif %}
+            {% if now().hour < 19 %} 
+              {% set ns.out = ns.out + [min(end[2] - start[2], len[2])] %}
+            {% else %}  
+              {% set ns.out = ns.out + [0] %}
+            {% endif %}
+            {{ ns.out }}
+          def_start: >-
+            {% set time_start = [22,9,14] %}
+            {% set time_end = [5,12,19] %}
+            {% set ns = namespace(out=[]) %}
+            {% for i in range(0, time_start | length) %}
+              {% if (24 + time_end[i] - time_start[i] - 1) % 24 >= (24 + time_end[i] - now().hour - 1) % 24 %}
+                  {% set ns.out = ns.out + [0] %}
+              {% else %}
+                  {% set ns.out = ns.out + [((24 + time_start[i] - now().hour) % 24)*2 - (now().minute/30)|int] %}
+              {% endif %}
             {% endfor %}
             {{ ns.out }}
           def_end: >- 
-            {% set interval = [8,30,44] %}
+            {% set time_end = [5,12,19] %}
             {% set ns = namespace(out=[]) %}
-            {% for i in interval %}
-              {% set ns.out = ns.out + [max(0, i - (now().hour + (now().hour < 14)*24 - 14)*2 - (now().minute > 30))] %}
+            {% for i in time_end %}
+              {% set ns.out = ns.out + [((24 + i - now().hour - 1) % 24)*2 + 2 - (now().minute/30)|int] %}
             {% endfor %}
             {{ ns.out }}
 
@@ -350,12 +360,14 @@ Senzor **home_load_no_val_loads** je spotřeba domu bez odložitelných zátěž
 Dejte restartovat HA pro načtení config.yaml
 
 # Základní automatizace #
-Generování **CSV** souborů s hodinovými cenami a spuštění optimalizace
+Generování **CSV** souborů a MPC optimalizace
 ```
-alias: EMHASS dayahead + MPC optimalizace
+alias: EMHASS dayahead optimalizace
 description: ""
 triggers:
-  - at: "14:03:00"
+  - at: "14:02:00"
+    trigger: time
+  - at: "22:02:00"
     trigger: time
 actions:
   - action: shell_command.restart_csv
@@ -394,34 +406,45 @@ actions:
     data: {}
   - action: shell_command.publish_data
     data: {}
-    enabled: false
-  - action: automation.trigger
-    metadata: {}
-    data:
-      skip_condition: true
-    target:
-      entity_id: automation.emhass_mpc_optimalizace
 ```
 
-MPC optimalizace
+Generování **CSV** souborů a MPC optimalizace
 ```
 alias: EMHASS MPC optimalizace
 description: ""
 triggers:
-  - at: "18:03:00"
-    trigger: time
-  - at: "20:03:00"
-    trigger: time
-  - at: "22:03:00"
-    trigger: time
-  - at: "06:03:00"
-    trigger: time
-  - at: "07:33:00"
-    trigger: time
-  - at: "09:03:00"
-    trigger: time
-  - at: "12:03:00"
-    trigger: time
+  - trigger: time
+    at: "22:05:00"
+  - trigger: time
+    at: "23:05:00"
+  - trigger: time
+    at: "0:05:00"
+  - trigger: time
+    at: "1:05:00"
+  - trigger: time
+    at: "2:05:00"
+  - trigger: time
+    at: "3:05:00"
+  - trigger: time
+    at: "4:05:00"
+  - trigger: time
+    at: "5:05:00"
+  - trigger: time
+    at: "6:05:00"
+  - trigger: time
+    at: "7:05:00"
+  - trigger: time
+    at: "8:05:00"
+  - trigger: time
+    at: "9:05:00"
+  - trigger: time
+    at: "10:05:00"
+  - trigger: time
+    at: "11:05:00"
+  - trigger: time
+    at: "12:05:00"
+  - trigger: time
+    at: "13:05:00"
 actions:
   - action: shell_command.restart_csv
     data: {}
@@ -429,7 +452,7 @@ actions:
       prices: "{{ state_attr('sensor.final_buy_kwh', 'hourly_prices') }}"
       start_time: "{{ now().replace(minute=(now().minute >= 30) * 30, second=0) }}"
   - repeat:
-      count: "{{ states('sensor.mpc_horizon') }}"
+      count: "{{ state_attr('sensor.mpc_final','intervals') }}"
       sequence:
         - data:
             message: >-
@@ -444,7 +467,7 @@ actions:
       prices: "{{ state_attr('sensor.final_sell_kwh', 'hourly_prices') }}"
       start_time: "{{ now().replace(minute=(now().minute >= 30) * 30, second=0) }}"
   - repeat:
-      count: "{{ states('sensor.mpc_horizon') }}"
+      count: "{{ state_attr('sensor.mpc_final','intervals') }}"
       sequence:
         - data:
             message: >-
@@ -535,9 +558,7 @@ Všechno pracuje a je načase i konat.
 Automatizace na řízení baterie u GoodWe:
 ```
 alias: EMHASS battery control
-description: >-
-  používání baterie dle EMHASS, chybi dodělat discharge a zakázání přetoku při
-  malých cenách
+description: používání baterie dle EMHASS
 triggers:
   - trigger: state
     entity_id:
@@ -548,48 +569,134 @@ triggers:
   - trigger: state
     entity_id:
       - sensor.soc_batt_forecast
+  - trigger: state
+    entity_id:
+      - sensor.final_sell_kwh
 conditions: []
 actions:
-  - if:
+  - alias: kontrola charge nebo idle battery_control pro hloubku vybití
+    if:
       - condition: or
         conditions:
           - condition: state
             entity_id: sensor.emhass_battery_control
             state: charge
-          - condition: state
-            entity_id: sensor.emhass_battery_control
-            state: idle
+          - condition: and
+            conditions:
+              - condition: state
+                entity_id: sensor.emhass_battery_control
+                state: idle
+              - condition: numeric_state
+                entity_id: sensor.battery_state_of_charge
+                below: sensor.soc_batt_forecast
+                enabled: false
     then:
-      - alias: zakázání využívání baterie v charge a idle
+      - alias: zakázání využívání baterie v charge a idle battery_control
         if:
           - alias: hloubka vybití baterie je pod 95%
             condition: numeric_state
             entity_id: number.goodwe_maximum_vybiti_v_siti
             above: 5
         then:
-          - action: number.set_value
+          - alias: vypnout používání baterie nastavením hloubky vybití na 95%
+            action: number.set_value
             metadata: {}
             data:
               value: 5
             target:
               entity_id: number.goodwe_maximum_vybiti_v_siti
-            alias: vypnout používání baterie
     else:
-      - alias: povolení využívání baterie v normal a discharge
+      - alias: povolení využívání baterie v normal a discharge battery_control
         if:
-          - alias: hloubka vybití baterie je pod 95%
+          - alias: hloubka vybití baterie je nad 20%
             condition: numeric_state
             entity_id: number.goodwe_maximum_vybiti_v_siti
             below: 80
         then:
-          - action: number.set_value
+          - alias: zapnout používání baterie nastavením hloubky vybití na 20%
+            action: number.set_value
             metadata: {}
             data:
               value: 80
             target:
               entity_id: number.goodwe_maximum_vybiti_v_siti
-            alias: vypnout používání baterie
-  - if:
+  - alias: kontrola přetoků při záporných cenách
+    if:
+      - condition: numeric_state
+        entity_id: number.final_sell_kwh
+        below: 0.2
+    then:
+      - alias: zapni řízení dodávky do sítě
+        if:
+          - alias: řízení dodávky je vypnuto
+            condition: state
+            entity_id: switch.goodwe_rizeni_dodavky_do_site
+            state: "off"
+        then:
+          - alias: zapnutí řízení dodávky do sítě
+            entity_id: switch.goodwe_rizeni_dodavky_do_site
+            action: homeassistant.turn_on
+      - alias: zakaž přetoky do sítě
+        if:
+          - alias: limit dodávky neni 0
+            condition: numeric_state
+            entity_id: number.goodwe_limit_dodavky_do_site
+            above: 0
+        then:
+          - alias: nastavi limit dodavky do site
+            action: number.set_value
+            metadata: {}
+            data:
+              value: 0
+            target:
+              entity_id: number.goodwe_limit_dodavky_do_site
+    else:
+      - alias: kontrola discharge battery_control
+        if:
+          - condition: state
+            entity_id: sensor.emhass_battery_control
+            state: discharge
+        then:
+          - alias: zapni řízení dodávky do sítě
+            if:
+              - alias: řízení dodávky je vypnuto
+                condition: state
+                entity_id: switch.goodwe_rizeni_dodavky_do_site
+                state: "off"
+            then:
+              - alias: zapnutí řízení dodávky do sítě
+                entity_id: switch.goodwe_rizeni_dodavky_do_site
+                action: homeassistant.turn_on
+          - alias: omez výkon do sítě na rezervovaný
+            if:
+              - alias: limit dodávky neni 6400W
+                condition: template
+                value_template: >-
+                  {{ states('number.goodwe_limit_dodavky_do_site') | int(0) !=
+                  6400 }}
+            then:
+              - alias: nastavi limit dodavky do site
+                action: number.set_value
+                metadata: {}
+                data:
+                  value: 6400
+                target:
+                  entity_id: number.goodwe_limit_dodavky_do_site
+        else:
+          - alias: >-
+              nejsou záporné ceny ani vybíjenbí do sítě, vypni řízení pro
+              snížení odběru
+            if:
+              - alias: řízení dodávky je zapnuto
+                condition: state
+                entity_id: switch.goodwe_rizeni_dodavky_do_site
+                state: "on"
+            then:
+              - alias: vypnutí řízení dodávky do sítě
+                entity_id: switch.goodwe_rizeni_dodavky_do_site
+                action: homeassistant.turn_off
+  - alias: kontrola charge battery_control pro dobíjení baterie
+    if:
       - condition: state
         entity_id: sensor.emhass_battery_control
         state: charge
@@ -597,35 +704,62 @@ actions:
         entity_id: sensor.battery_state_of_charge
         below: sensor.soc_batt_forecast
     then:
-      - alias: nabijeni baterie
+      - alias: zapnout nabijeni baterie
         if:
-          - alias: měnič je v obecném reřimu
+          - alias: měnič je v echo_charge módu
             condition: state
             entity_id: select.goodwe_provozni_rezim_stridace
-            state: general
-        then:
-          - action: select.select_option
+            state: eco_charge
+        then: []
+        else:
+          - alias: zapnout nabíjení baterie eco_charge režimem
+            action: select.select_option
             metadata: {}
             data:
               option: eco_charge
             target:
               entity_id: select.goodwe_provozni_rezim_stridace
-            alias: měnič zapne nabíjení baterie
     else:
-      - alias: vypnuti nabijeni baterie
+      - alias: kontrola discharge battery_control pro vybíjení baterie
         if:
-          - alias: měnič dobíjí baterii
-            condition: state
-            entity_id: select.goodwe_provozni_rezim_stridace
-            state: eco_charge
+          - condition: state
+            entity_id: sensor.emhass_battery_control
+            state: discharge
+          - condition: numeric_state
+            entity_id: sensor.battery_state_of_charge
+            above: sensor.soc_batt_forecast
         then:
-          - action: select.select_option
-            metadata: {}
-            data:
-              option: general
-            target:
-              entity_id: select.goodwe_provozni_rezim_stridace
-            alias: měnič do obecného režimu
+          - alias: zapnout vybíjení baterie eco_discharge režimem
+            if:
+              - alias: měnič je v eco_discharge módu
+                condition: state
+                entity_id: select.goodwe_provozni_rezim_stridace
+                state: eco_discharge
+            then: []
+            else:
+              - alias: měnič do eco_discharge režimu
+                action: select.select_option
+                metadata: {}
+                data:
+                  option: eco_dischrge
+                target:
+                  entity_id: select.goodwe_provozni_rezim_stridace
+        else:
+          - alias: vypnout nabíjení/vybíjení baterie obecným režimem
+            if:
+              - alias: měnič je v obecném módu
+                condition: state
+                entity_id: select.goodwe_provozni_rezim_stridace
+                state: general
+            then: []
+            else:
+              - alias: měnič do obecného režimu
+                action: select.select_option
+                metadata: {}
+                data:
+                  option: general
+                target:
+                  entity_id: select.goodwe_provozni_rezim_stridace
 mode: single
 ```
 
