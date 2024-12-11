@@ -741,7 +741,7 @@ actions:
                 action: select.select_option
                 metadata: {}
                 data:
-                  option: eco_dischrge
+                  option: eco_discharge
                 target:
                   entity_id: select.goodwe_provozni_rezim_stridace
         else:
