@@ -287,7 +287,7 @@ sensor:
             {% set end = state_attr('sensor.mpc_final','def_end') %}
             {% set len = [2,1.5,2] %}
             {% set ns = namespace(out=[]) %}
-            {% if now().hour < 5 and now().hour >= 22 %} 
+            {% if now().hour < 5 or now().hour >= 23 %} 
               {% set ns.out = [min(end[0] - start[0], len[0])] %}
             {% else %}  
               {% set ns.out = [0] %}
@@ -667,7 +667,7 @@ actions:
               - alias: zapnutí řízení dodávky do sítě
                 entity_id: switch.goodwe_rizeni_dodavky_do_site
                 action: homeassistant.turn_on
-          - alias: omez výkon do sítě na rezervovaný
+          - alias: omez výkon do sítě na rezervovaný/povolený
             if:
               - alias: limit dodávky neni 6400W
                 condition: template
@@ -684,8 +684,7 @@ actions:
                   entity_id: number.goodwe_limit_dodavky_do_site
         else:
           - alias: >-
-              nejsou záporné ceny ani vybíjenbí do sítě, vypni řízení pro
-              snížení odběru
+              nejsou záporné ceny ani vybíjenbí do sítě, vypni řízení (u GoodWe se sníží spotřeba na polovinu až třetinu); tuto část zrušit, pokud rezervovaný/povolený výkon do sítě je v+těí, než kWp výkon panelů
             if:
               - alias: řízení dodávky je zapnuto
                 condition: state
