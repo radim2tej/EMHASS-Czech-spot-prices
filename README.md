@@ -142,7 +142,7 @@ Samotná konfigurace EMHASSu může vypadat následně (po přepnutí do textov�
     true,
     true
   ],
-  "weather_forecast_method": "scrapper",
+  "weather_forecast_method": "solcast",
   "weight_battery_charge": 1.5,
   "weight_battery_discharge": 2
 }
@@ -360,14 +360,12 @@ Senzor **home_load_no_val_loads** je spotřeba domu bez odložitelných zátěž
 Dejte restartovat HA pro načtení config.yaml
 
 # Základní automatizace #
-Generování **CSV** souborů a MPC optimalizace
+Generování **CSV** souborů a dayahead optimalizace
 ```
-alias: EMHASS dayahead optimalizace
+alias: EMHASS Dayahead optimalizace
 description: ""
 triggers:
-  - at: "14:02:00"
-    trigger: time
-  - at: "22:02:00"
+  - at: "22:00:30"
     trigger: time
 actions:
   - action: shell_command.restart_csv
@@ -408,43 +406,19 @@ actions:
     data: {}
 ```
 
-Generování **CSV** souborů a MPC optimalizace
+Generování **CSV** souborů a MPC optimalizace co 15 minut
 ```
-alias: EMHASS MPC optimalizace
+alias: EMHASS MPC optimalizace 15min
 description: ""
 triggers:
-  - trigger: time
-    at: "22:03:30"
-  - trigger: time
-    at: "23:03:30"
-  - trigger: time
-    at: "0:03:30"
-  - trigger: time
-    at: "1:03:30"
-  - trigger: time
-    at: "2:03:30"
-  - trigger: time
-    at: "3:03:30"
-  - trigger: time
-    at: "4:03:30"
-  - trigger: time
-    at: "5:03:30"
-  - trigger: time
-    at: "6:03:30"
-  - trigger: time
-    at: "7:03:30"
-  - trigger: time
-    at: "8:03:30"
-  - trigger: time
-    at: "9:03:30"
-  - trigger: time
-    at: "10:03:30"
-  - trigger: time
-    at: "11:03:30"
-  - trigger: time
-    at: "12:03:30"
-  - trigger: time
-    at: "13:03:30"
+  - trigger: time_pattern
+    minutes: "2"
+  - trigger: time_pattern
+    minutes: "17"
+  - trigger: time_pattern
+    minutes: "32"
+  - trigger: time_pattern
+    minutes: "47"
 actions:
   - action: shell_command.restart_csv
     data: {}
@@ -484,19 +458,46 @@ actions:
     data: {}
 ```
 
-Pravidelné publikování predikčních dat
+Predikce předpovědi počasí do cache systému
 ```
-alias: EMHASS publish
+alias: EMHASS Wather chache
 description: ""
-trigger:
-  - minutes: /5
-    platform: time_pattern
+triggers:
+  - trigger: time_pattern
+    hours: "22"
+    minutes: "0"
     seconds: "0"
-condition: []
-action:
-  - action: shell_command.publish_data
+  - trigger: time_pattern
+    hours: "6"
+    minutes: "0"
+    seconds: "0"
+  - trigger: time_pattern
+    hours: "8"
+    minutes: "0"
+    seconds: "0"
+  - trigger: time_pattern
+    hours: "10"
+    minutes: "0"
+    seconds: "0"
+  - trigger: time_pattern
+    hours: "12"
+    minutes: "0"
+    seconds: "0"
+  - trigger: time_pattern
+    hours: "14"
+    minutes: "0"
+    seconds: "0"
+  - trigger: time_pattern
+    hours: "16"
+    minutes: "0"
+    seconds: "0"
+  - trigger: time_pattern
+    hours: "18"
+    minutes: "0"
+    seconds: "0"
+actions:
+  - action: shell_command.weather_cache
     data: {}
-mode: single
 ```
 
 Automatizace pro nízký - vysoký tarif elektřiny. Časy jsou natvrdo, jelikož pro FVE mám tarif PTV3 se stejnými časy po celý týden. Stav přepínače ovlivňuje cenu vpočtu spotové ceny (regulovaná část).
@@ -684,7 +685,9 @@ actions:
                   entity_id: number.goodwe_limit_dodavky_do_site
         else:
           - alias: >-
-              nejsou záporné ceny ani vybíjenbí do sítě, vypni řízení (u GoodWe se sníží spotřeba na polovinu až třetinu); tuto část zrušit, pokud rezervovaný/povolený výkon do sítě je v+těí, než kWp výkon panelů
+              nejsou záporné ceny ani vybíjenbí do sítě, vypni řízení (u GoodWe
+              se sníží spotřeba na polovinu až třetinu); tuto část zrušit, pokud
+              rezervovaný/povolený výkon do sítě je v+těí, než kWp výkon panelů
             if:
               - alias: řízení dodávky je zapnuto
                 condition: state
@@ -810,62 +813,57 @@ triggers:
     trigger: time_pattern
 conditions: []
 actions:
-  - choose:
-      - conditions:
-          - condition: state
-            entity_id: binary_sensor.deferrable012
-            state: "off"
-        sequence:
-          - entity_id: switch.zasuvka_boiler_vypinac
-            action: homeassistant.turn_off
-      - conditions:
-          - condition: or
+  - if:
+      - condition: or
+        conditions:
+          - condition: and
             conditions:
-              - condition: and
-                conditions:
-                  - condition: numeric_state
-                    entity_id: sensor.teplota_boileru
-                    below: 42
-                  - condition: state
-                    entity_id: binary_sensor.kapacita_pro_boiler
-                    state: "on"
-              - condition: and
-                conditions:
-                  - condition: state
-                    entity_id: binary_sensor.vlazny_boiler
-                    state: "on"
-                  - condition: state
-                    entity_id: binary_sensor.deferrable012
-                    state: "on"
-                  - condition: state
-                    entity_id: binary_sensor.kapacita_pro_boiler
-                    state: "on"
-              - condition: and
-                conditions:
-                  - condition: state
-                    entity_id: binary_sensor.kapacita_pro_boiler
-                    state: "on"
-                  - condition: numeric_state
-                    entity_id: sensor.pv_power
-                    above: 4000
-                  - condition: numeric_state
-                    entity_id: sensor.battery_state_of_charge
-                    above: 75
-              - condition: and
-                conditions:
-                  - condition: state
-                    entity_id: binary_sensor.kapacita_pro_boiler
-                    state: "on"
-                  - condition: numeric_state
-                    entity_id: sensor.pv_power
-                    above: 2600
-                  - condition: numeric_state
-                    entity_id: sensor.battery_state_of_charge
-                    above: 90
-        sequence:
-          - entity_id: switch.zasuvka_boiler_vypinac
-            action: homeassistant.turn_on
-    default:
+              - condition: state
+                entity_id: binary_sensor.kapacita_pro_boiler
+                state: "on"
+              - condition: numeric_state
+                entity_id: sensor.teplota_boileru
+                below: 38
+              - condition: time
+                after: "07:00:00"
+                before: "20:00:00"
+          - condition: and
+            conditions:
+              - condition: state
+                entity_id: binary_sensor.kapacita_pro_boiler
+                state: "on"
+              - condition: state
+                entity_id: binary_sensor.vlazny_boiler
+                state: "on"
+              - condition: state
+                entity_id: binary_sensor.deferrable012
+                state: "on"
+          - condition: and
+            conditions:
+              - condition: state
+                entity_id: binary_sensor.kapacita_pro_boiler
+                state: "on"
+              - condition: numeric_state
+                entity_id: sensor.pv_power
+                above: 4000
+              - condition: numeric_state
+                entity_id: sensor.battery_state_of_charge
+                above: 75
+          - condition: and
+            conditions:
+              - condition: state
+                entity_id: binary_sensor.kapacita_pro_boiler
+                state: "on"
+              - condition: numeric_state
+                entity_id: sensor.pv_power
+                above: 2600
+              - condition: numeric_state
+                entity_id: sensor.battery_state_of_charge
+                above: 90
+    then:
+      - entity_id: switch.zasuvka_boiler_vypinac
+        action: homeassistant.turn_on
+    else:
       - entity_id: switch.zasuvka_boiler_vypinac
         action: homeassistant.turn_off
 mode: single
