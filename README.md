@@ -9,6 +9,11 @@ Uvedená konigurace je zprovozněna na měniči GoodWe 10K-ET s 6.4kWp panelů a
 Spuštění dayahead optimalizace je naplánováno na 14:03, kdy jsou známy nové spotové ceny na další den a během dne je pak spouštěna MPC, kdy se upresňuje aktuální energie v baterii. Boiler je použit jako odložitelná zátěž a jelikož ho nahřívám v noci, dopoledne a odpoledne, tak ho model zpracovává jako 3 samostatné odli6iteln0 zátěže (deferrable0, deferrable1 a deferrable2) s různými časovými okny a automatizace si e pospojuje do **deferrable012**. Systém umí nastavit své chování, jestli v optimalizaci jde o cenu, efektivní spotřebu energie nebo zisk podle vašeho přání.
 ![denní predikce](2024-11-30_17-14-11_Radim–Home_Assistant.png)
 
+# Verze #
+1.1.0 - dodána 15 minutová MPC optimalizace (dayahead ve 22:00, MPC co 15 minut), používání chache předpovědi počasí, dodáno vybíjení baterie do sítě
+
+1.0.0 - první verze s dayahead optimalizací ve 14:00, obsluha baterie (nabíjení, idle a normální stav), boiler dohřívá 3x denně
+
 # Instalace #
 1. V doplňcích nainstalovat **EMHASS** (https://github.com/davidusb-geek/emhass-add-on) - je potřeba přidat repozitář a zvolit EMHASS jako add-on.
 2. V HACS přidat **Nanogreen** pro zjišťování spotových cen.
