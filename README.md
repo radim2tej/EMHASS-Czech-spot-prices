@@ -12,7 +12,7 @@ Spuštění dayahead optimalizace je naplánováno na 14:03, kdy jsou známy nov
 # Verze #
 1.1.0 - dodána 15 minutová MPC optimalizace (dayahead ve 22:00, MPC co 15 minut), používání chache předpovědi počasí, dodáno vybíjení baterie do sítě
 
-1.0.0 - první verze s dayahead optimalizací ve 14:00, obsluha baterie (nabíjení, idle a normální stav), boiler dohřívá 3x denně
+1.0.0 - první verze s dayahead optimalizací ve 14:00, krok optimalizace 30 minut, obsluha baterie (nabíjení, idle a normální stav), boiler dohřívá 3x denně
 
 # Instalace #
 1. V doplňcích nainstalovat **EMHASS** (https://github.com/davidusb-geek/emhass-add-on) - je potřeba přidat repozitář a zvolit EMHASS jako add-on.
@@ -152,10 +152,11 @@ Samotná konfigurace EMHASSu může vypadat následně (po přepnutí do textov�
   "weight_battery_discharge": 2
 }
 ```
-Jako Metoda předpovědi výroby FVE **Weather forecast method** je zvolena **solcast**, ale jsou zde na výběr i jiné: **scrapper**, **solar.foecast** a **csv**.
-1. scrapper potřebuje mít v nastavení nadefinovánu zeměpisnou šířku, delku a v konfiguraci typ panelů a typ měniče
-2. solcast potřebuje účet na webu solcast a z něj v nastavení nastaven api-key a roof%id; zdarma poskytuje 10 žádostí denně s rozlišením 30 minut
-3. solar.forecast potřebuje v nastavení maximální výkon panelů; poskytje 12 žádostí za hodinu s rozlišením 1h
+Pro předpověď výroby FVE **Weather forecast method** lze nastavit 3 metody:
+1. scrapper z webu clearoutside.com potřebuje mít v nastavení nadefinovánu zeměpisnou šířku, délku a v konfiguraci typ panelů a typ měniče
+2. solcast z webu solcast.com potřebuje účet na webu solcast a z něj v nastavení nastaven api-key a roof%id; zdarma poskytuje až 10 žádostí denně s rozlišením 30 minut
+3. solar.forecast z webu forecast.solar potřebuje v nastavení maximální výkon panelů; poskytuje až 12 žádostí za hodinu s rozlišením 1h
+Jako nejpřesnější se osvědčila **solcast**.
 
 Do **config.yaml** přidat nastavení a senzory. Jsou zde přidány i senzory **import_power** a **export_power** pro správný výpočet spotřeb a utility meter pro nízký a vysoký tarif.
 ```
