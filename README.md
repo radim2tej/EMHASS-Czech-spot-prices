@@ -167,9 +167,9 @@ homeassistant:
   
 shell_command:
   restart_csv: cp /share/zero.csv /share/data_load_cost_forecast.csv; cp /share/zero.csv /share/data_prod_price_forecast.csv
-  dayahead_optim: "curl -i -H \"Content-Type:application/json\" -X POST -d '{\"weather_forecast_cache_only\":true}' http://localhost:5000/action/dayahead-optim"
-  naive_mpc_optim: "curl -i -H \"Content-Type:application/json\" -X POST -d '{\"weather_forecast_cache_only\":true,\"prediction_horizon\":{{ state_attr('sensor.mpc_final','intervals') }},\"soc_init\":{{ (states('sensor.battery_state_of_charge')|float(20))/100 }},\"soc_final\":{{ state_attr('sensor.mpc_final','soc_final') }},\"operating_hours_of_each_deferrable_load\":{{ state_attr('sensor.mpc_final','def_len') }},\"start_timesteps_of_each_deferrable_load\":{{ state_attr('sensor.mpc_final','def_start') }},\"end_timesteps_of_each_deferrable_load\":{{ state_attr('sensor.mpc_final','def_end') }} }' http://localhost:5000/action/naive-mpc-optim"
-  weather_cache: "curl -i -H 'Content-Type:application/json' -X POST -d {\"weather_forecast_cache_only\":true} http://localhost:5000/action/weather-forecast-cache"
+  dayahead_optim: "curl -i -H \"Content-Type:application/json\" -X POST -d '{\"weather_forecast_cache_only\":\"true\"}' http://localhost:5000/action/dayahead-optim"
+  naive_mpc_optim: "curl -i -H \"Content-Type:application/json\" -X POST -d '{\"weather_forecast_cache_only\":\"true\",\"prediction_horizon\":{{ state_attr('sensor.mpc_final','intervals') }},\"soc_init\":{{ (states('sensor.battery_state_of_charge')|float(20))/100 }},\"soc_final\":{{ state_attr('sensor.mpc_final','soc_final') }},\"operating_hours_of_each_deferrable_load\":{{ state_attr('sensor.mpc_final','def_len') }},\"start_timesteps_of_each_deferrable_load\":{{ state_attr('sensor.mpc_final','def_start') }},\"end_timesteps_of_each_deferrable_load\":{{ state_attr('sensor.mpc_final','def_end') }} }' http://localhost:5000/action/naive-mpc-optim"
+  weather_cache: "rm /share/weather_forecast_data.pkl ;curl -i -H 'Content-Type:application/json' -X POST -d {} http://localhost:5000/action/weather-forecast-cache"
   publish_data: "curl -i -H \"Content-Type:application/json\" -X POST -d '{}' http://localhost:5000/action/publish-data"
 
 utility_meter:
@@ -469,6 +469,18 @@ Predikce předpovědi počasí do cache systému
 ```
 alias: EMHASS Wather chache
 description: ""
+triggers:
+    hours: "6"
+    minutes: "50"
+    seconds: "0"
+triggers:
+    hours: "10"
+    minutes: "50"
+    seconds: "0"
+triggers:
+    hours: "14"
+    minutes: "50"
+    seconds: "0"
 triggers:
     hours: "21"
     minutes: "50"
