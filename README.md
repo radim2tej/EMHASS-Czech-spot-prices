@@ -6,10 +6,12 @@ Uvedená konigurace je zprovozněna na měniči GoodWe 10K-ET s 6.4kWp panelů a
 # Co je EMHASS? #
 [EMHASS](https://emhass.readthedocs.io/en/latest/) - Energy managment system je predikční systém, který na základě vstupů (předpověď spotřeby domácnosti, předpověď výroby fotovoltaiky, stav nabití baterie, ceny energie na spotovém trhu, ...) dokáže řídit efektivní nabíjení / vybíjení baterie, ovládání spotřebičů s odložitelým spuštěním a nákup / prodej elektřiny.
 
-Spuštění dayahead optimalizace je naplánováno na 22:00 a během dne je pak spouštěna MPC, kdy se upresňuje aktuální energie v baterii. Boiler je použit jako odložitelná zátěž a jelikož ho nahřívám v noci, dopoledne a odpoledne, tak ho model zpracovává jako 3 samostatné odli6iteln0 zátěže (deferrable0, deferrable1 a deferrable2) s různými časovými okny a automatizace si e pospojuje do **deferrable012**. Systém umí nastavit své chování, jestli v optimalizaci jde o cenu, efektivní spotřebu energie nebo zisk podle vašeho přání.
+Spuštění dayahead optimalizace je naplánováno na 22:00 a během dne je pak spouštěna MPC, kdy se upresňuje aktuální energie v baterii. Boiler je použit jako odložitelná zátěž a jelikož ho nahřívám v noci, dopoledne a odpoledne, tak ho model zpracovává jako 3 samostatné odli6iteln0 zátěže (deferrable0, deferrable1 a deferrable2) s různými časovými okny a automatizace si e pospojuje do **deferrable_boiler**. Podobně se třebi okny pracuje i tepelné čerpadlo jako **deferrable_tc**. Potřebná doba pro ohřev boileru a topení je vypočtena z teploty boileru a interiéru, při známé servačnosti domu. Systém umí nastavit své chování, jestli v optimalizaci jde o cenu, efektivní spotřebu energie nebo zisk podle vašeho přání.
 ![denní predikce](2024-11-30_17-14-11_Radim–Home_Assistant.png)
 
 # Verze #
+1.2.0 - upraveno MPC okno na 30 minutovou optimalizaci (dayahead ve 22:00, MPC co 30 minut), dodáno použití TČ
+
 1.1.0 - dodána 15 minutová MPC optimalizace (dayahead ve 22:00, MPC co 15 minut), používání chache předpovědi počasí, dodáno vybíjení baterie do sítě
 
 1.0.0 - první verze s dayahead optimalizací ve 14:00, krok optimalizace 30 minut, obsluha baterie (nabíjení, idle a normální stav), boiler dohřívá 3x denně
@@ -30,26 +32,29 @@ V **Doplňcích / EMHASS / Nastavení** nastavte dir /share, souřadnice long., 
 Samotná konfigurace EMHASSu může vypadat následně (po přepnutí do textové formy):
 ```
 {
-  "battery_charge_efficiency": 0.9,
-  "battery_charge_power_max": 6000,
-  "battery_discharge_efficiency": 0.9,
+  "battery_charge_efficiency": 0.85,
+  "battery_charge_power_max": 7300,
+  "battery_discharge_efficiency": 0.85,
   "battery_discharge_power_max": 8000,
   "battery_dynamic_max": 0.9,
   "battery_dynamic_min": -0.9,
-  "battery_maximum_state_of_charge": 0.9,
+  "battery_maximum_state_of_charge": 0.93,
   "battery_minimum_state_of_charge": 0.2,
   "battery_nominal_energy_capacity": 14200,
   "battery_target_state_of_charge": 0.5,
   "compute_curtailment": false,
   "continual_publish": false,
-  "costfun": "profit",
+  "costfun": "cost",
   "delta_forecast_daily": 1,
   "end_timesteps_of_each_deferrable_load": [
     9,
     29,
-    45
+    45,
+    0,
+    0,
+    0
   ],
-  "historic_days_to_retrieve": 10,
+  "historic_days_to_retrieve": 11,
   "inverter_is_hybrid": true,
   "load_cost_forecast_method": "csv",
   "load_forecast_method": "naive",
@@ -75,10 +80,10 @@ Samotná konfigurace EMHASSu může vypadat následně (po přepnutí do textov�
   },
   "load_peak_hours_cost": 0.1907,
   "logging_level": "INFO",
-  "lp_solver": "default",
+  "lp_solver": "PULP_CBC_CMD",
   "lp_solver_path": "empty",
-  "maximum_power_from_grid": 12000,
-  "maximum_power_to_grid": 6400,
+  "maximum_power_from_grid": 14000,
+  "maximum_power_to_grid": 7400,
   "method_ts_round": "first",
   "modules_per_string": [
     16
@@ -86,13 +91,19 @@ Samotná konfigurace EMHASSu může vypadat následně (po přepnutí do textov�
   "nominal_power_of_deferrable_loads": [
     2000,
     2000,
-    2000
+    2000,
+    1600,
+    1600,
+    1600
   ],
-  "number_of_deferrable_loads": 3,
+  "number_of_deferrable_loads": 6,
   "operating_hours_of_each_deferrable_load": [
-    1.5,
     2,
-    1.5
+    1.5,
+    1.5,
+    0,
+    0,
+    0
   ],
   "optimization_time_step": 30,
   "photovoltaic_production_sell_price": 1,
@@ -116,9 +127,15 @@ Samotná konfigurace EMHASSu může vypadat následně (po přepnutí do textov�
   "set_deferrable_load_single_constant": [
     false,
     false,
+    false,
+    false,
+    false,
     false
   ],
   "set_deferrable_startup_penalty": [
+    0,
+    0,
+    0,
     0,
     0,
     0
@@ -127,11 +144,15 @@ Samotná konfigurace EMHASSu může vypadat následně (po přepnutí do textov�
   "set_nodischarge_to_grid": false,
   "set_total_pv_sell": false,
   "set_use_battery": true,
+  "set_use_pv": true,
   "set_zero_min": true,
   "start_timesteps_of_each_deferrable_load": [
     0,
     17,
-    37
+    37,
+    0,
+    0,
+    0
   ],
   "strings_per_inverter": [
     1
@@ -145,10 +166,13 @@ Samotná konfigurace EMHASSu může vypadat následně (po přepnutí do textov�
   "treat_deferrable_load_as_semi_cont": [
     true,
     true,
+    true,
+    true,
+    true,
     true
   ],
-  "weather_forecast_method": "solcast",
-  "weight_battery_charge": 1.5,
+  "weather_forecast_method": "scrapper",
+  "weight_battery_charge": 2,
   "weight_battery_discharge": 2
 }
 ```
@@ -167,9 +191,9 @@ homeassistant:
   
 shell_command:
   restart_csv: cp /share/zero.csv /share/data_load_cost_forecast.csv; cp /share/zero.csv /share/data_prod_price_forecast.csv
-  dayahead_optim: "curl -i -H \"Content-Type:application/json\" -X POST -d '{\"weather_forecast_cache_only\":\"true\"}' http://localhost:5000/action/dayahead-optim"
-  naive_mpc_optim: "curl -i -H \"Content-Type:application/json\" -X POST -d '{\"weather_forecast_cache_only\":\"true\",\"prediction_horizon\":{{ state_attr('sensor.mpc_final','intervals') }},\"soc_init\":{{ (states('sensor.battery_state_of_charge')|float(20))/100 }},\"soc_final\":{{ state_attr('sensor.mpc_final','soc_final') }},\"operating_hours_of_each_deferrable_load\":{{ state_attr('sensor.mpc_final','def_len') }},\"start_timesteps_of_each_deferrable_load\":{{ state_attr('sensor.mpc_final','def_start') }},\"end_timesteps_of_each_deferrable_load\":{{ state_attr('sensor.mpc_final','def_end') }} }' http://localhost:5000/action/naive-mpc-optim"
-  weather_cache: "rm /share/weather_forecast_data.pkl ;curl -i -H 'Content-Type:application/json' -X POST -d {} http://localhost:5000/action/weather-forecast-cache"
+  dayahead_optim: "curl -i -H \"Content-Type:application/json\" -X POST -d '{\"weather_forecast_cache_only\":\"true\",\"battery_target_state_of_charge\":{{ (states('sensor.battery_state_of_charge')|float(20))/100 }} }' http://localhost:5000/action/dayahead-optim"
+  naive_mpc_optim: "curl -i -H \"Content-Type:application/json\" -X POST -d '{\"weather_forecast_cache_only\":\"true\",\"soc_init\":{{ (states('sensor.battery_state_of_charge')|float(20))/100 }},\"soc_final\":{{ state_attr('sensor.mpc_final','soc_final') }},\"prediction_horizon\":{{ state_attr('sensor.mpc_final','intervals') }},\"start_timesteps_of_each_deferrable_load\":{{ state_attr('sensor.mpc_final','def_start') }},\"end_timesteps_of_each_deferrable_load\":{{ state_attr('sensor.mpc_final','def_end') }},\"operating_hours_of_each_deferrable_load\":{{ state_attr('sensor.mpc_final','def_len') }} }' http://localhost:5000/action/naive-mpc-optim"
+  weather_cache: "rm /share/weather_forecast_data.pkl ;curl -i -H \"Content-Type:application/json\" -X POST -d '{}' http://localhost:5000/action/weather-forecast-cache"
   publish_data: "curl -i -H \"Content-Type:application/json\" -X POST -d '{}' http://localhost:5000/action/publish-data"
 
 utility_meter:
@@ -202,9 +226,9 @@ sensor:
         device_class: monetary
         value_template: >-
           {% if is_state('select.electric','vt') %}
-            {{ (states('sensor.current_market_price_czk_kwh') | float(default=8.0)) * 1.21 + 2.22 }}
+            {{ (states('sensor.current_market_price_czk_kwh') | float(default=8.0)) * 1.21 + 2.076 }}
           {% else %}
-            {{ (states('sensor.current_market_price_czk_kwh') | float(default=8.0)) * 1.21 + 1.965 }}
+            {{ (states('sensor.current_market_price_czk_kwh') | float(default=8.0)) * 1.21 + 1.452 }}
           {% endif %}
         attribute_templates:
           hourly_prices: >-
@@ -212,9 +236,9 @@ sensor:
             {% set ns = namespace(final = [], n = 0) %}
             {% for i in prices %}
               {% if ns.n in [8,12,15,19, 32,36,39,43] %}
-                {% set ns.final = ns.final + [i * 1.21 + 2.22] %}
+                {% set ns.final = ns.final + [i * 1.21 + 2.076] %}
               {% else %}
-                {% set ns.final = ns.final + [i * 1.21 + 1.965] %}
+                {% set ns.final = ns.final + [i * 1.21 + 1.452] %}
               {% endif %}
               {% set ns.n = ns.n + 1 %}
             {% endfor %}
@@ -237,21 +261,20 @@ sensor:
       emhass_battery_control:
         unique_id: emhass_battery_control
         value_template: >-
-          {% if states('sensor.p_grid_forecast') | float > 200.0 and states('sensor.p_batt_forecast') | float < -200.0 %}  
+          {% if states('sensor.p_batt_forecast') | float < -400.0 and states('sensor.p_grid_forecast') | float > 400.0 %}  
             {{ 'charge' }}
-          {% elif states('sensor.p_grid_forecast') | float < -200.0 and states('sensor.p_batt_forecast') | float > 200.0 %}
+          {% elif states('sensor.p_batt_forecast') | float > 400.0 and states('sensor.p_grid_forecast') | float < -400.0 %}
             {{ 'discharge' }}
           {% elif states('sensor.p_batt_forecast') | float == 0 %}
             {{ 'idle' }}
-          {% elif states('sensor.p_batt_forecast') | float != 0 %} 
+          {% else %} 
             {{ 'normal' }}                          
           {% endif %}
 
-      p_deferrable012:
+      p_deferrable_boiler:
         unit_of_measurement: 'W'
         device_class: power
-        value_template: >-
-          {{ states('sensor.p_deferrable0') | float(default=0) + states('sensor.p_deferrable1') | float(default=0) + states('sensor.p_deferrable2') | float(default=0) }} 
+        value_template: "{{ states('sensor.p_deferrable0') | float(default=0) + states('sensor.p_deferrable1') | float(default=0) + states('sensor.p_deferrable2') | float(default=0) }} "
         attribute_templates:
           schedule: >-
             {% set sched0 = state_attr('sensor.p_deferrable0', 'deferrables_schedule') %}
@@ -259,7 +282,22 @@ sensor:
             {% set sched2 = state_attr('sensor.p_deferrable2', 'deferrables_schedule') %}
             {% set ns = namespace(final = []) %}
             {% for i in range(0, sched0 | length) %}
-              {% set ns.final = ns.final + [{'date': sched0[i].date, 'p_deferrable012': sched0[i].p_deferrable0 | float + sched1[i].p_deferrable1 | float + sched2[i].p_deferrable2 | float}] %}
+              {% set ns.final = ns.final + [{'date': sched0[i].date, 'p_deferrable': sched0[i].p_deferrable0 | float + sched1[i].p_deferrable1 | float + sched2[i].p_deferrable2 | float}] %}
+            {% endfor %}
+            {{ ns.final }}
+
+      p_deferrable_tc:
+        unit_of_measurement: 'W'
+        device_class: power
+        value_template: "{{ states('sensor.p_deferrable3') | float(default=0) + states('sensor.p_deferrable4') | float(default=0) + states('sensor.p_deferrable5') | float(default=0) }} "
+        attribute_templates:
+          schedule: >-
+            {% set sched0 = state_attr('sensor.p_deferrable3', 'deferrables_schedule') %}
+            {% set sched1 = state_attr('sensor.p_deferrable4', 'deferrables_schedule') %}
+            {% set sched2 = state_attr('sensor.p_deferrable5', 'deferrables_schedule') %}
+            {% set ns = namespace(final = []) %}
+            {% for i in range(0, sched0 | length) %}
+              {% set ns.final = ns.final + [{'date': sched0[i].date, 'p_deferrable': sched0[i].p_deferrable3 | float + sched1[i].p_deferrable4 | float + sched2[i].p_deferrable5 | float}] %}
             {% endfor %}
             {{ ns.final }}
 
@@ -267,14 +305,14 @@ sensor:
       home_load_no_var_loads:
         unit_of_measurement: 'W'
         device_class: power
-        value_template: "{{ states('sensor.load') | int + (states('sensor.back_up_load') | int) - (states('sensor.zasuvka_boiler_napajeni') | int) }}"
+        value_template: "{{ states('sensor.load') | int + (states('sensor.back_up_load') | int) - (states('sensor.zasuvka_boiler_napajeni') | int) - (states('sensor.tc_kotel_power') | int) }}"
 
 # volitelně pro boiler, aby spotřeba na fázi, kde je připojen nepekročila limit měniče a nedocucával ze sítě:
       prikon_bez_boileru:
         unit_of_measurement: 'W'
         device_class: power
         value_template: >-
-          {{ states('sensor.load_l1') | float(default=0) + (states('sensor.back_up_l1_power') | float(default=0)) - (states('sensor.zasuvka_boiler_napajeni') | float(default=0)) }}
+        value_template: "{{ states('sensor.load_l1') | float(default=0) + (states('sensor.back_up_l1_power') | float(default=0)) - (states('sensor.zasuvka_boiler_napajeni') | float(default=0)) }}"
 
 # data pro MPC
       mpc_final: # vypocte delku MPC parametru do value_teplate (min. delka 5 kvuli MPC)
@@ -282,37 +320,16 @@ sensor:
         attribute_templates:
           soc_final: >-
             {% if now().month == 12 or now().month == 1 %}
-              {{ 0.6 }}
+              {{ 0.3 }}
             {% elif now().month >= 10 or now().month <= 3 %}
-              {{ 0.4 }}
+              {{ 0.3 }}
             {% else %}
               {{ 0.3 }}
             {% endif %}
           intervals: "{{ max(5,(states('sensor.mpc_final')|int + (now().hour >= states('sensor.mpc_final')|int)*24 - now().hour)*2 - (now().minute/30)|int) }}"
-          def_len: >-
-            {% set start = state_attr('sensor.mpc_final','def_start') %}
-            {% set end = state_attr('sensor.mpc_final','def_end') %}
-            {% set len = [2,1.5,2] %}
-            {% set ns = namespace(out=[]) %}
-            {% if now().hour < 5 or now().hour >= 23 %} 
-              {% set ns.out = [min(end[0] - start[0], len[0])] %}
-            {% else %}  
-              {% set ns.out = [0] %}
-            {% endif %}
-            {% if now().hour < 12 %} 
-              {% set ns.out = ns.out + [min(end[1] - start[1], len[1])] %}
-            {% else %}  
-              {% set ns.out = ns.out + [0] %}
-            {% endif %}
-            {% if now().hour < 19 %} 
-              {% set ns.out = ns.out + [min(end[2] - start[2], len[2])] %}
-            {% else %}  
-              {% set ns.out = ns.out + [0] %}
-            {% endif %}
-            {{ ns.out }}
           def_start: >-
-            {% set time_start = [22,9,14] %}
-            {% set time_end = [5,12,19] %}
+            {% set time_start = [22, 9, 14, 23, 6, 13] %}
+            {% set time_end = [5, 12, 19, 6, 13, 22] %}
             {% set ns = namespace(out=[]) %}
             {% for i in range(0, time_start | length) %}
               {% if (24 + time_end[i] - time_start[i] - 1) % 24 >= (24 + time_end[i] - now().hour - 1) % 24 %}
@@ -323,11 +340,61 @@ sensor:
             {% endfor %}
             {{ ns.out }}
           def_end: >- 
-            {% set time_end = [5,12,19] %}
+            {% set time_end = [5, 12, 19, 6, 13, 22] %}
             {% set ns = namespace(out=[]) %}
             {% for i in time_end %}
               {% set ns.out = ns.out + [((24 + i - now().hour - 1) % 24)*2 + 2 - (now().minute/30)|int] %}
             {% endfor %}
+            {{ ns.out }}
+          def_len: >-
+            {% set start = state_attr('sensor.mpc_final','def_start') %}
+            {% set end = state_attr('sensor.mpc_final','def_end') %}
+            {% set ns = namespace(out=[]) %}
+            {% set len = max(0,(48 - (states('sensor.teplota_boileru')|int(default=38))) / 6 + 1) | round(0) %}
+            {% if now().hour < 5 or now().hour >= 22 %} 
+              {% set ns.out = [min(end[0] - start[0], len)] %}
+              {% set len = 2 %}
+            {% else %}  
+              {% set ns.out = [0] %}
+            {% endif %}
+            {% if now().hour < 12 or now().hour >= 22 %} 
+              {% set ns.out = ns.out + [min(end[1] - start[1], len)] %}
+              {% set len = 2 %}
+            {% else %}  
+              {% set ns.out = ns.out + [0] %}
+            {% endif %}
+            {% if now().hour < 19 or now().hour >= 22 %} 
+              {% set ns.out = ns.out + [min(end[2] - start[2], len)] %}
+            {% else %}  
+              {% set ns.out = ns.out + [0] %}
+            {% endif %}
+
+            {% set len = max(0,(state_attr('climate.termostat_domu','target_temp_low')|float(default=22.0) - (states('sensor.teplota_termostatu')|float(default=24.0))) * 6 + 1) | round(0) %}
+            {% if now().hour < 6 %} 
+              {% set ns.out = ns.out + [min(end[3] - start[3], len)] %}
+              {% set len = (len * 3 / 4 + 1) | round(0) %}
+            {% else %}  
+              {% set ns.out = ns.out + [0] %}
+            {% endif %}
+            {% if now().hour < 13 %} 
+              {% if (states('sensor.solcast_pv_forecast_forecast_today')|float) >= 10 %}
+                {% set ns.out = ns.out + [min(end[4] - start[4], min(2,len))] %}
+              {% else %}  
+                {% set ns.out = ns.out + [min(end[4] - start[4], len)] %}
+              {% endif %}
+              {% set len = (len * 3 / 4 + 1) | round(0) %}
+            {% else %}  
+              {% set ns.out = ns.out + [0] %}
+            {% endif %}
+            {% if now().hour < 22 %}
+              {% if (states('sensor.solcast_pv_forecast_forecast_today')|float) >= 10 %}
+                {% set ns.out = ns.out + [min(end[5] - start[5], min(2,len))] %}
+              {% else %}  
+                {% set ns.out = ns.out + [min(end[5] - start[5], len)] %}
+              {% endif %}
+            {% else %}  
+              {% set ns.out = ns.out + [0] %}
+            {% endif %}
             {{ ns.out }}
 
   - platform: integration
@@ -345,8 +412,10 @@ sensor:
 binary_sensor:
   - platform: template
     sensors:
-      deferrable012:
-        value_template: "{{ states('sensor.p_deferrable0') | float(default=0) > 100 or states('sensor.p_deferrable1') | float(default=0) > 100 or states('sensor.p_deferrable2') | float(default=0) > 100}}" 
+      deferrable_boiler:
+        value_template: "{{ states('sensor.p_deferrable0') | float(default=0) > 100 or states('sensor.p_deferrable1') | float(default=0) > 100 or states('sensor.p_deferrable2') | float(default=0) > 100 }}"
+      deferrable_tc:
+        value_template: "{{ states('sensor.p_deferrable3') | float(default=0) > 100 or states('sensor.p_deferrable4') | float(default=0) > 100 or states('sensor.p_deferrable5') | float(default=0) > 100 }}"
 
 # pro moje řízení boileru, kdy do boileru podle teploty a nabiti baterie posilam prebytky pro nahrati na vyssi teplotu
   - platform: threshold
@@ -362,7 +431,7 @@ binary_sensor:
 ```
 Součástí senzorů je i výpočet koncové ceny (final buy_kwh a energie final_sell_kwh) pro nákup a prodej. Je potřeba si ji upravit podle vašeho dodavatele / odběratele.
 
-Senzor **home_load_no_val_loads** je spotřeba domu bez odložitelných zátěží - zde boileru.
+Senzor **home_load_no_val_loads** je spotřeba domu bez odložitelných zátěží - zde boileru a TČ.
 
 Dejte restartovat HA pro načtení config.yaml
 
@@ -556,65 +625,16 @@ triggers:
       - sensor.emhass_battery_control
   - trigger: state
     entity_id:
-      - sensor.battery_state_of_charge
-  - trigger: state
-    entity_id:
       - sensor.soc_batt_forecast
   - trigger: state
     entity_id:
       - sensor.final_sell_kwh
 conditions: []
 actions:
-  - alias: kontrola charge nebo idle battery_control pro hloubku vybití
-    if:
-      - condition: or
-        conditions:
-          - condition: state
-            entity_id: sensor.emhass_battery_control
-            state: charge
-          - condition: and
-            conditions:
-              - condition: state
-                entity_id: sensor.emhass_battery_control
-                state: idle
-              - condition: numeric_state
-                entity_id: sensor.battery_state_of_charge
-                below: sensor.soc_batt_forecast
-                enabled: false
-    then:
-      - alias: zakázání využívání baterie v charge a idle battery_control
-        if:
-          - alias: hloubka vybití baterie je pod 95%
-            condition: numeric_state
-            entity_id: number.goodwe_maximum_vybiti_v_siti
-            above: 5
-        then:
-          - alias: vypnout používání baterie nastavením hloubky vybití na 95%
-            action: number.set_value
-            metadata: {}
-            data:
-              value: 5
-            target:
-              entity_id: number.goodwe_maximum_vybiti_v_siti
-    else:
-      - alias: povolení využívání baterie v normal a discharge battery_control
-        if:
-          - alias: hloubka vybití baterie je nad 20%
-            condition: numeric_state
-            entity_id: number.goodwe_maximum_vybiti_v_siti
-            below: 80
-        then:
-          - alias: zapnout používání baterie nastavením hloubky vybití na 20%
-            action: number.set_value
-            metadata: {}
-            data:
-              value: 80
-            target:
-              entity_id: number.goodwe_maximum_vybiti_v_siti
   - alias: kontrola přetoků při záporných cenách
     if:
       - condition: numeric_state
-        entity_id: number.final_sell_kwh
+        entity_id: sensor.final_sell_kwh
         below: 0.2
     then:
       - alias: zapni řízení dodávky do sítě
@@ -660,24 +680,25 @@ actions:
                 action: homeassistant.turn_on
           - alias: omez výkon do sítě na rezervovaný/povolený
             if:
-              - alias: limit dodávky neni 6400W
+              - alias: limit dodávky neni 7400W
                 condition: template
                 value_template: >-
                   {{ states('number.goodwe_limit_dodavky_do_site') | int(0) !=
-                  6400 }}
+                  7400 }}
             then:
-              - alias: nastavi limit dodavky do site
+              - alias: nastavi limit dodavky
                 action: number.set_value
                 metadata: {}
                 data:
-                  value: 6400
+                  value: 7400
                 target:
                   entity_id: number.goodwe_limit_dodavky_do_site
         else:
           - alias: >-
-              nejsou záporné ceny ani vybíjenbí do sítě, vypni řízení (u GoodWe
-              se sníží spotřeba na polovinu až třetinu); tuto část zrušit, pokud
-              rezervovaný/povolený výkon do sítě je v+těí, než kWp výkon panelů
+              nejsou záporné ceny ani vybíjení do sítě, vypni řízení (u GoodWe
+              se sníží spotřeba na polovinu až třetinu); tuto část lze zrušit,
+              pokud rezervovaný/povolený výkon do sítě je větší, než kWp výkon
+              panelů
             if:
               - alias: řízení dodávky je zapnuto
                 condition: state
@@ -687,41 +708,64 @@ actions:
               - alias: vypnutí řízení dodávky do sítě
                 entity_id: switch.goodwe_rizeni_dodavky_do_site
                 action: homeassistant.turn_off
-  - alias: kontrola charge battery_control pro dobíjení baterie
-    if:
-      - condition: state
-        entity_id: sensor.emhass_battery_control
-        state: charge
-      - condition: numeric_state
-        entity_id: sensor.battery_state_of_charge
-        below: sensor.soc_batt_forecast
-    then:
-      - alias: zapnout nabijeni baterie
-        if:
-          - alias: měnič je v echo_charge módu
-            condition: state
-            entity_id: select.goodwe_provozni_rezim_stridace
-            state: eco_charge
-        then: []
-        else:
-          - alias: zapnout nabíjení baterie eco_charge režimem
-            action: select.select_option
-            metadata: {}
-            data:
-              option: eco_charge
-            target:
-              entity_id: select.goodwe_provozni_rezim_stridace
-    else:
-      - alias: kontrola discharge battery_control pro vybíjení baterie
-        if:
+  - choose:
+      - conditions:
+          - condition: state
+            entity_id: sensor.emhass_battery_control
+            state: charge
+        sequence:
+          - alias: nastaví úroveň nabití baterie v ekonomickém režimu nabíjení
+            if:
+              - alias: cílová úroveň nabití není podle predikce
+                condition: template
+                value_template: >-
+                  {{
+                  states('number.goodwe_stav_nabiti_baterie_ekonomickem_rezimu')
+                  | int(0) != states('sensor.soc_batt_forecast') | int(0) }}
+            then:
+              - alias: nastavi úroveň nabití baterie
+                action: number.set_value
+                metadata: {}
+                data:
+                  value: "{{ states('sensor.soc_batt_forecast') | int(0) }}"
+                target:
+                  entity_id: number.goodwe_stav_nabiti_baterie_ekonomickem_rezimu
+          - alias: zapnout nabijeni baterie
+            if:
+              - alias: měnič je v echo_charge módu
+                condition: state
+                entity_id: select.goodwe_provozni_rezim_stridace
+                state: eco_charge
+            then: []
+            else:
+              - alias: zapnout nabíjení baterie eco_charge režimem
+                action: select.select_option
+                metadata: {}
+                data:
+                  option: eco_charge
+                target:
+                  entity_id: select.goodwe_provozni_rezim_stridace
+      - conditions:
           - condition: state
             entity_id: sensor.emhass_battery_control
             state: discharge
-          - condition: numeric_state
-            entity_id: sensor.battery_state_of_charge
-            above: sensor.soc_batt_forecast
-        then:
-          - alias: zapnout vybíjení baterie eco_discharge režimem
+        sequence:
+          - alias: nastaví úroveň vybití baterie v ekonomickém režimu vybíjení
+            if:
+              - alias: cílová úroveň vybití není podle predikce
+                condition: template
+                value_template: >-
+                  {{ states('number.goodwe_maximum_vybiti_v_siti') | int(0) !=
+                  (100 - states('sensor.soc_batt_forecast') | int(20)) }}
+            then:
+              - alias: nastaví limit vybití baterie
+                action: number.set_value
+                metadata: {}
+                data:
+                  value: "{{ 100 - states('sensor.soc_batt_forecast') | int(20) }}"
+                target:
+                  entity_id: number.goodwe_maximum_vybiti_v_siti
+          - alias: zapnout vybíjení baterie
             if:
               - alias: měnič je v eco_discharge módu
                 condition: state
@@ -729,29 +773,65 @@ actions:
                 state: eco_discharge
             then: []
             else:
-              - alias: měnič do eco_discharge režimu
+              - alias: zapnout vybíjení baterie eco_discharge režimem
                 action: select.select_option
                 metadata: {}
                 data:
                   option: eco_discharge
                 target:
                   entity_id: select.goodwe_provozni_rezim_stridace
-        else:
-          - alias: vypnout nabíjení/vybíjení baterie obecným režimem
+                enabled: true
+    default:
+      - alias: idle nebo normal battery_control
+        if:
+          - condition: state
+            entity_id: sensor.emhass_battery_control
+            state: idle
+        then:
+          - alias: zakázání využívání baterie v idle battery_control
             if:
-              - alias: měnič je v obecném módu
-                condition: state
-                entity_id: select.goodwe_provozni_rezim_stridace
-                state: general
-            then: []
-            else:
-              - alias: měnič do obecného režimu
-                action: select.select_option
+              - alias: hloubka vybití baterie je pod 95%
+                condition: numeric_state
+                entity_id: number.goodwe_maximum_vybiti_v_siti
+                above: 5
+            then:
+              - alias: vypnout používání baterie nastavením hloubky vybití na 95%
+                action: number.set_value
                 metadata: {}
                 data:
-                  option: general
+                  value: 5
                 target:
-                  entity_id: select.goodwe_provozni_rezim_stridace
+                  entity_id: number.goodwe_maximum_vybiti_v_siti
+        else:
+          - alias: povolení využívání baterie v normal battery_control
+            if:
+              - alias: hloubka vybití baterie je nad 20%
+                condition: numeric_state
+                entity_id: number.goodwe_maximum_vybiti_v_siti
+                below: 80
+            then:
+              - alias: zapnout používání baterie nastavením hloubky vybití na 20%
+                action: number.set_value
+                metadata: {}
+                data:
+                  value: 80
+                target:
+                  entity_id: number.goodwe_maximum_vybiti_v_siti
+      - alias: vypnout nabíjení/vybíjení baterie obecným režimem
+        if:
+          - alias: měnič je v obecném módu
+            condition: state
+            entity_id: select.goodwe_provozni_rezim_stridace
+            state: general
+        then: []
+        else:
+          - alias: měnič do obecného režimu
+            action: select.select_option
+            metadata: {}
+            data:
+              option: general
+            target:
+              entity_id: select.goodwe_provozni_rezim_stridace
 mode: single
 ```
 
@@ -826,7 +906,7 @@ actions:
                 entity_id: binary_sensor.vlazny_boiler
                 state: "on"
               - condition: state
-                entity_id: binary_sensor.deferrable012
+                entity_id: binary_sensor.deferrable_boiler
                 state: "on"
           - condition: and
             conditions:
@@ -835,7 +915,7 @@ actions:
                 state: "on"
               - condition: numeric_state
                 entity_id: sensor.pv_power
-                above: 4000
+                above: 40000
               - condition: numeric_state
                 entity_id: sensor.battery_state_of_charge
                 above: 75
@@ -846,7 +926,7 @@ actions:
                 state: "on"
               - condition: numeric_state
                 entity_id: sensor.pv_power
-                above: 2600
+                above: 26000
               - condition: numeric_state
                 entity_id: sensor.battery_state_of_charge
                 above: 90
