@@ -171,7 +171,7 @@ Samotná konfigurace EMHASSu může vypadat následně (po přepnutí do textov�
     true,
     true
   ],
-  "weather_forecast_method": "scrapper",
+  "weather_forecast_method": "solcast",
   "weight_battery_charge": 2,
   "weight_battery_discharge": 2
 }
