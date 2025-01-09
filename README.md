@@ -939,6 +939,65 @@ actions:
 mode: single
 ```
 
+Boiler pro NIBE tepelné čerpadlo:
+```
+alias: EMHASS Boiler s minimální teplotou
+description: inteligentní dohřívání boileru
+triggers:
+  - trigger: state
+    entity_id:
+      - binary_sensor.deferrable_boiler
+  - trigger: state
+    entity_id:
+      - sensor.bt6_hw_load_40014
+  - trigger: time_pattern
+    hours: /1
+    minutes: "1"
+conditions: []
+actions:
+  - if:
+      - condition: or
+        conditions:
+          - condition: and
+            conditions:
+              - condition: numeric_state
+                entity_id: sensor.bt6_hw_load_40014
+                below: 38
+              - condition: time
+                after: "07:00:00"
+                before: "20:00:00"
+          - condition: state
+            entity_id: binary_sensor.deferrable_boiler
+            state: "on"
+    then:
+      - if:
+          - condition: state
+            entity_id: select.hot_water_comfort_mode_47041
+            state: NORMAL
+        then: []
+        else:
+          - action: select.select_option
+            metadata: {}
+            data:
+              option: NORMAL
+            target:
+              entity_id: select.hot_water_comfort_mode_47041
+    else:
+      - if:
+          - condition: state
+            entity_id: select.hot_water_comfort_mode_47041
+            state: ECONOMY
+        then: []
+        else:
+          - action: select.select_option
+            metadata: {}
+            data:
+              option: ECONOMY
+            target:
+              entity_id: select.hot_water_comfort_mode_47041
+mode: single
+```
+
 # Příklady vizualizace #
 ![denní predikce](2024-11-30_17-14-11_Radim–Home_Assistant.png)
 ```
