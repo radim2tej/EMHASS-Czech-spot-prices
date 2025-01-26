@@ -32,27 +32,27 @@ V **Doplňcích / EMHASS / Nastavení** nastavte dir /share, souřadnice long., 
 Samotná konfigurace EMHASSu může vypadat následně (po přepnutí do textové formy):
 ```
 {
-  "battery_charge_efficiency": 0.85,
+  "battery_charge_efficiency": 0.95,
   "battery_charge_power_max": 7300,
-  "battery_discharge_efficiency": 0.85,
-  "battery_discharge_power_max": 8000,
+  "battery_discharge_efficiency": 0.95,
+  "battery_discharge_power_max": 7300,
   "battery_dynamic_max": 0.9,
   "battery_dynamic_min": -0.9,
-  "battery_maximum_state_of_charge": 0.93,
+  "battery_maximum_state_of_charge": 0.99,
   "battery_minimum_state_of_charge": 0.2,
   "battery_nominal_energy_capacity": 14200,
-  "battery_target_state_of_charge": 0.5,
-  "compute_curtailment": false,
+  "battery_target_state_of_charge": 0.45,
+  "compute_curtailment": true,
   "continual_publish": false,
-  "costfun": "cost",
+  "costfun": "profit",
   "delta_forecast_daily": 1,
   "end_timesteps_of_each_deferrable_load": [
-    9,
-    29,
-    45,
-    0,
-    0,
-    0
+    10,
+    30,
+    44,
+    16,
+    30,
+    48
   ],
   "historic_days_to_retrieve": 11,
   "inverter_is_hybrid": true,
@@ -80,8 +80,8 @@ Samotná konfigurace EMHASSu může vypadat následně (po přepnutí do textov�
   },
   "load_peak_hours_cost": 0.1907,
   "logging_level": "INFO",
-  "lp_solver": "PULP_CBC_CMD",
-  "lp_solver_path": "empty",
+  "lp_solver": "COIN_CMD",
+  "lp_solver_path": "/usr/bin/cbc",
   "maximum_power_from_grid": 14000,
   "maximum_power_to_grid": 7400,
   "method_ts_round": "first",
@@ -98,9 +98,9 @@ Samotná konfigurace EMHASSu může vypadat následně (po přepnutí do textov�
   ],
   "number_of_deferrable_loads": 6,
   "operating_hours_of_each_deferrable_load": [
+    1,
     2,
-    1.5,
-    1.5,
+    1,
     0,
     0,
     0
@@ -126,10 +126,10 @@ Samotná konfigurace EMHASSu může vypadat následně (po přepnutí do textov�
   "set_battery_dynamic": false,
   "set_deferrable_load_single_constant": [
     false,
+    true,
     false,
     false,
-    false,
-    false,
+    true,
     false
   ],
   "set_deferrable_startup_penalty": [
@@ -148,11 +148,11 @@ Samotná konfigurace EMHASSu může vypadat následně (po přepnutí do textov�
   "set_zero_min": true,
   "start_timesteps_of_each_deferrable_load": [
     0,
-    17,
-    37,
+    16,
+    38,
     0,
-    0,
-    0
+    18,
+    30
   ],
   "strings_per_inverter": [
     1
@@ -172,8 +172,8 @@ Samotná konfigurace EMHASSu může vypadat následně (po přepnutí do textov�
     true
   ],
   "weather_forecast_method": "solcast",
-  "weight_battery_charge": 2,
-  "weight_battery_discharge": 2
+  "weight_battery_charge": 0,
+  "weight_battery_discharge": 1.5
 }
 ```
 Pro předpověď výroby FVE **Weather forecast method** lze nastavit 3 metody:
